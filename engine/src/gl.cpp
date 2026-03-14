@@ -3,10 +3,9 @@
 #include <engine/sdl.hpp>
 #include <engine/mesh.hpp>
 #include <engine/image.hpp>
+#include <engine/log.hpp>
 
 #include <fstream>
-
-#include <SDL3/SDL_log.h>
 
 namespace gt::gl
 {
@@ -27,7 +26,7 @@ void link(shader & s)
     {
         static GLchar log[1024];
         glGetProgramInfoLog(s, 1024, nullptr, log);
-        SDL_Log("[ERROR][OpenGL] program linkage error: %s\n", log);
+        log::err(log::category::gl, "program linkage error: {}\n", log);
     }
 }
 
@@ -48,7 +47,7 @@ void attach_source(shader & s, stage stage, std::string_view source)
         {
             GLchar log[1024];
             glGetShaderInfoLog(shader, 1024, nullptr, log);
-            SDL_Log("[ERROR][OpenGL] shader compilation error: %s\n", log);
+            log::err(log::category::gl, "shader compilation error: {}\n", log);
         }
     }
 

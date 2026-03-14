@@ -101,22 +101,9 @@ private:
     Fn fn;
 };
 
-namespace detail
-{
-
-void log_debug(int line, char const* fn, char const* fmt, ...);
-
-} // namespace detail
-
 } // namespace gt
 
 // TODO! remove or move to separate header
 #define GT_CONCAT(a, b) a ## b
 #define GT_UNIQUE_ID(l) GT_CONCAT(UNIQUE_ID_, l)
 #define GT_SCOPE_EXIT [[maybe_unused]] ::gt::scope_exit GT_UNIQUE_ID(__LINE__) = [&]
-
-#ifndef NDEBUG
-#define GT_LOG_DEBUG(...) ::gt::detail::log_debug(__LINE__, __FILE__, __VA_ARGS__)
-#else
-#define GT_LOG_DEBUG(...)
-#endif

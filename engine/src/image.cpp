@@ -1,9 +1,8 @@
 #include <engine/image.hpp>
 #include <engine/ranges.hpp>
+#include <engine/log.hpp>
 
 #include <fstream>
-
-#include <SDL3/SDL_log.h>
 
 namespace gt::ppm
 {
@@ -59,12 +58,12 @@ try
     if (ext == ".ppm")
         return ppm::load(img, in);
 
-    SDL_Log("[ERROR][engine] can't load image %s: unsupported format %s\n", path.c_str(), ext.c_str());
+    log::err("can't load image {}: unsupported format {}\n", path.c_str(), ext.c_str());
     return false;
 }
 catch (std::ifstream::failure const& e)
 {
-    SDL_Log("[ERROR][engine] can't load image %s: %s", path.c_str(), e.what());
+    log::err("can't load image {}: {}", path.c_str(), e.what());
     return false;
 }
 
@@ -92,7 +91,7 @@ bool from_file(cubemap & c, std::filesystem::path const& path)
 
     if (!std::filesystem::is_directory(path))
     {
-        SDL_Log("[ERROR][engine] can't load cubemap %s: expected directory", path.c_str());
+        log::err("can't load cubemap {}: expected directory", path.c_str());
         return false;
     }
 

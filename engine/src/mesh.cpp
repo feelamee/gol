@@ -1,4 +1,5 @@
 #include <engine/mesh.hpp>
+#include <engine/log.hpp>
 
 #include <fstream>
 #include <algorithm>
@@ -7,9 +8,7 @@
 #include <unordered_map>
 #include <cassert>
 #include <filesystem>
-#include <numeric>
 
-#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_assert.h>
 
 namespace gt::obj
@@ -232,18 +231,19 @@ try
     if (!in.is_open())
         return false;
 
+    // TODO! why exception throwing with failbit? why failbit is raised
     in.exceptions(std::ifstream::badbit);
 
     auto const ext = path.extension();
     if (ext == ".obj")
         return obj::load(m, in);
 
-    SDL_Log("[ERROR][engine] can't load mesh: unsupported format %s\n", ext.c_str());
+    log::err("can't load mesh: unsupported format {}\n", ext.c_str());
     return false;
 }
 catch (std::ifstream::failure const& f)
 {
-    SDL_Log("[ERROR][engine] can't load mesh: %s\n", f.what());
+    log::err("can't load mesh: {}\n", f.what());
     return false;
 }
 

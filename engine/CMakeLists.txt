@@ -23,6 +23,7 @@ target_sources(
 		include/engine/gl.hpp
 		include/engine/algorithm.hpp
 		include/engine/imgui.hpp
+		include/engine/log.hpp
 
     PRIVATE
     FILE_SET private_headers
@@ -43,6 +44,7 @@ target_sources(
         src/camera.cpp
         src/gl.cpp
         src/imgui.cpp
+        src/log.cpp
 )
 target_compile_features(engine PUBLIC cxx_std_20)
 
@@ -97,6 +99,7 @@ target_precompile_headers(
         <map>
         <unordered_set>
         <set>
+        <format>
 
         <SDL3/SDL_events.h>
         <SDL3/SDL_filesystem.h>

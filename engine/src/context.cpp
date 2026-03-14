@@ -2,6 +2,7 @@
 
 #include <engine/error.hpp>
 #include <engine/sdl.hpp>
+#include <engine/log.hpp>
 
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_video.h>
@@ -71,8 +72,8 @@ context::context()
     if (!errc)
         throw error("[ERROR][engine] gladLoadGLES2Loader failed");
 
-    GLubyte const * real_version = glGetString(GL_VERSION);
-    GT_LOG_DEBUG("[INFO] OpenGL is initialized: %s\n", real_version);
+    std::string_view real_version{ reinterpret_cast<char const*>(glGetString(GL_VERSION)) };
+    log::info(log::category::gl, "OpenGL is initialized: {}\n", real_version);
 
     {
         int w{ 0 }, h{ 0 };
@@ -130,14 +131,32 @@ context & ctx()
     return *g_context;
 }
 
+static log::category from_gl_source(GLenum s)
+{
+    switch (s)
+    {
+    }
+
+    unreachable();
+}
+
+static log::priority from_gl_severity(GLenum s)
+{
+    switch (s)
+    {
+    }
+
+    unreachable();
+}
+
 void APIENTRY gl_debug_message_callback(
     GLenum source,
-    GLenum type,
+    GLenum /* type */,
     GLuint id,
     GLenum severity,
     GLsizei length,
     GLchar const* msg,
-    void const*
+    void const* /* user */
 )
 {
     static GLuint last_id = -1u;
@@ -154,8 +173,9 @@ void APIENTRY gl_debug_message_callback(
 
     if (message_strick == max_message_strick)
     {
-        SDL_Log(
-            "Last message was repeated %d times. Now it will be suppressed\n",
+        log::info(
+            log::category::gl,
+            "Last message was repeated {} times. Now it will be suppressed\n",
             max_message_strick
         );
     }
@@ -163,48 +183,10 @@ void APIENTRY gl_debug_message_callback(
     if (message_strick >= max_message_strick)
         return;
 
-    char const* source_str;
-    char const* type_str;
-    char const* severity_str;
-
-#define CASE(var, en) case (en): (var) = #en; break
-
-    // TODO! somehow match source/type/severity to SDL log system?
-    switch (source)
-    {
-        CASE(source_str, GL_DEBUG_SOURCE_API);
-        CASE(source_str, GL_DEBUG_SOURCE_WINDOW_SYSTEM);
-        CASE(source_str, GL_DEBUG_SOURCE_SHADER_COMPILER);
-        CASE(source_str, GL_DEBUG_SOURCE_THIRD_PARTY);
-        CASE(source_str, GL_DEBUG_SOURCE_APPLICATION);
-        CASE(source_str, GL_DEBUG_SOURCE_OTHER);
-        default: source_str = "GL_DEBUG_SOURCE_UNKNOWN";
-    }
-
-    switch (type) {
-        CASE(type_str, GL_DEBUG_TYPE_ERROR);
-        CASE(type_str, GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR);
-        CASE(type_str, GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR);
-        CASE(type_str, GL_DEBUG_TYPE_PORTABILITY);
-        CASE(type_str, GL_DEBUG_TYPE_PERFORMANCE);
-        CASE(type_str, GL_DEBUG_TYPE_OTHER);
-        CASE(type_str, GL_DEBUG_TYPE_MARKER);
-        default: type_str = "GL_DEBUG_TYPE_UNKNOWN";
-    }
-
-    switch (severity) {
-        CASE(severity_str, GL_DEBUG_SEVERITY_HIGH);
-        CASE(severity_str, GL_DEBUG_SEVERITY_MEDIUM);
-        CASE(severity_str, GL_DEBUG_SEVERITY_LOW);
-        CASE(severity_str, GL_DEBUG_SEVERITY_NOTIFICATION);
-        default: severity_str = "GL_DEBUG_SEVERITY_UNKNOWN";
-    }
-
-#undef CASE
-
-    SDL_Log(
-        "[ID %d] [%s] [%s] [%s]:\n    %.*s\n",
-        id, type_str, severity_str, source_str, length, msg
+    log::log(
+        from_gl_source(source), from_gl_severity(severity),
+        "ID {}: {}\n",
+        id, std::string_view{ msg, sz(length) }
     );
 }
 

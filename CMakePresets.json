@@ -16,7 +16,7 @@
         {
             "name": "debug-config",
             "hidden": true,
-            "binaryDir": "build-debug/",
+            "binaryDir": ".build-debug/",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -25,7 +25,7 @@
         {
             "name": "release-config",
             "hidden": true,
-            "binaryDir": "build-release/",
+            "binaryDir": ".build-release/",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }

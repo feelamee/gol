@@ -9,6 +9,8 @@
 #include <engine/gl.hpp>
 #include <engine/algorithm.hpp>
 #include <engine/imgui.hpp>
+#include <engine/log.hpp>
+#include <engine/log_macro.hpp>
 using namespace gt;
 
 #include <SDL3/SDL.h>
@@ -24,6 +26,7 @@ using namespace gt;
 #include <imgui/imgui.h>
 
 #include <cstdlib>
+#include <csignal>
 
 constexpr auto vertex_shader_src = R"(
 #version 320 es
@@ -98,9 +101,20 @@ void main()
 
 int main()
 {
+    // register custom SIGINT to allow Ctrl+C immediately close program even if assets loading...
+    std::signal(
+        SIGINT,
+        [](int)
+        {
+            log::err("SIGINT is called\n");
+            std::quick_exit(EXIT_FAILURE);
+        }
+    );
+
     // enable if you want ImGui Viewports support
     // if (!SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11"))
     //     sdl::log_error();
+
 
     context ctx;
     glEnable(GL_DEPTH_TEST);
@@ -111,7 +125,7 @@ int main()
     gl::link(shader_program);
     GT_SCOPE_EXIT { destroy(shader_program); };
 
-    constexpr static auto model_filepath{ "/home/missed/code/gravity/assets/sasuke/sasuke.model" };
+    constexpr auto model_filepath{ "/home/missed/code/gravity/assets/sasuke/sasuke.model" };
     gl::model sasuke_model;
     if (!from_file(sasuke_model, 0, model_filepath))
         throw error{ "[ERROR][ENGINE] can't load model: {}", model_filepath };
@@ -124,7 +138,7 @@ int main()
     gl::link(skybox_shader_program);
     GT_SCOPE_EXIT { destroy(skybox_shader_program); };
 
-    constexpr static auto skybox_filepath{ "/home/missed/code/gravity/assets/skybox/skybox.model" };
+    constexpr auto skybox_filepath{ "/home/missed/code/gravity/assets/skybox/skybox.model" };
     gl::model skybox_model;
     if (!from_file(skybox_model, 0, skybox_filepath))
         throw error{ "[ERROR][ENGINE] can't load model: {}", skybox_filepath };
@@ -138,6 +152,11 @@ int main()
     f32 delta_time{ 0 };
     f32 last_ticks{ 0 };
 
+    GT_LOG_DEBUG("[ImGui] IMGUI_VERSION_NUM: {}\n", IMGUI_VERSION_NUM);
+    GT_LOG_DEBUG(
+        "[ImGui] io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable: {}\n",
+        ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable
+    );
     struct
     {
         bool show_demo_window{ false };
