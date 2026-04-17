@@ -33,8 +33,18 @@ context::context()
     if (g_context)
         throw error("[ERROR][engine] context must be created only once");
 
+    if (SDL_VERSION != SDL_GetVersion())
+    {
+        throw error{
+            "[ERROR][ENGINE] compiled SDL version is different from linked:"
+            "compiled {}, linked {}",
+            SDL_VERSION, SDL_GetVersion()
+        };
+    }
+
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         sdl::throw_error();
+    GT_SCOPE_FAIL { SDL_Quit(); };
 
     window = SDL_CreateWindow(
         "gravity simulation",
@@ -43,6 +53,7 @@ context::context()
     );
     if (!window)
         sdl::throw_error();
+    GT_SCOPE_FAIL { SDL_DestroyWindow(window); };
 
     constexpr auto profile =
 #if defined(__WIN32__)
@@ -62,6 +73,7 @@ context::context()
     glcontext = SDL_GL_CreateContext(window);
     if (!glcontext)
         sdl::throw_error();
+    GT_SCOPE_FAIL { SDL_GL_DestroyContext(glcontext); };
 
     auto const load_gl_fn = [](char const* fn)
     {
@@ -75,13 +87,10 @@ context::context()
     std::string_view real_version{ reinterpret_cast<char const*>(glGetString(GL_VERSION)) };
     log::info(log::category::gl, "OpenGL is initialized: {}\n", real_version);
 
-    {
-        int w{ 0 }, h{ 0 };
-        if (!SDL_GetWindowSize(window, &w, &h))
-            sdl::throw_error();
-
+    if (int w, h; SDL_GetWindowSize(window, &w, &h))
         glViewport(0, 0, w, h);
-    }
+    else
+        sdl::log_error();
 
 #ifndef NDEBUG
     glDebugMessageCallback(&gl_debug_message_callback, nullptr);
@@ -89,7 +98,15 @@ context::context()
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif
 
-    IMGUI_CHECKVERSION();
+    if (!IMGUI_CHECKVERSION())
+    {
+        throw error{
+            "[ERROR][ENGINE] compiled ImGui version is different from linked:"
+            "compiled '{}', linked '{}'",
+            IMGUI_VERSION, ImGui::GetVersion()
+        };
+    }
+
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -105,8 +122,15 @@ context::context()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    ImGui_ImplSDL3_InitForOpenGL(window, glcontext);
-    ImGui_ImplOpenGL3_Init();
+    if (!ImGui_ImplSDL3_InitForOpenGL(window, glcontext))
+        throw error{ "[ERROR][ENGINE] can't initalize ImGui SDL3 backend for OpenGL" };
+    GT_SCOPE_FAIL { ImGui_ImplSDL3_Shutdown(); };
+
+    if (!ImGui_ImplOpenGL3_Init())
+        throw error{ "[ERROR][ENGINE] can't initalize ImGui OpenGL3 backend" };
+    GT_SCOPE_FAIL { ImGui_ImplOpenGL3_Shutdown(); };
+
+    log::info("Dear ImGui is initialized: {}\n", std::string_view(ImGui::GetVersion()));
 
     g_context = this;
 }
@@ -117,9 +141,10 @@ context::~context()
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    SDL_DestroyWindow(window);
     SDL_GL_DestroyContext(glcontext);
+    SDL_DestroyWindow(window);
     SDL_Quit();
+
     g_context = nullptr;
 }
 
@@ -133,6 +158,7 @@ context & ctx()
 
 static log::category from_gl_source(GLenum s)
 {
+    unimplemented();
     switch (s)
     {
     }
@@ -142,6 +168,7 @@ static log::category from_gl_source(GLenum s)
 
 static log::priority from_gl_severity(GLenum s)
 {
+    unimplemented();
     switch (s)
     {
     }

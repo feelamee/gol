@@ -142,13 +142,13 @@ static bool load(mesh & m, std::istream & in)
         {
             sz r{ 0 };
 
-            for (float a : v.pos)
+            for (f32 a : v.pos)
                 hash_combine(r, a);
 
-            for (float a : v.uv)
+            for (f32 a : v.uv)
                 hash_combine(r, a);
 
-            for (float a : v.normal)
+            for (f32 a : v.normal)
                 hash_combine(r, a);
 
             return r;

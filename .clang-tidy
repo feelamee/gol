@@ -1,3 +1,5 @@
+# https://clang.llvm.org/extra/clang-tidy/checks/list.html
+
 Checks: '
         -*
 
@@ -47,16 +49,6 @@ Checks: '
         ,bugprone-unused-local-non-trivial-variable
         ,bugprone-use-after-move
 
-        ,misc-unused-alias-decls
-        ,misc-unused-using-decls
-        ,misc-unused-parameters
-        ,misc-header-include-cycle
-        ,misc-static-assert
-        ,misc-redundant-expression
-        ,misc-use-internal-linkage
-        ,misc-unused-alias-decls
-        ,misc-unused-using-decls
-
         ,cppcoreguidelines-*
         ,-cppcoreguidelines-pro-type-union-access
         ,-cppcoreguidelines-pro-type-vararg
@@ -75,6 +67,17 @@ Checks: '
         ,clang-analyzer-*
 
         ,misc-const-correctness
+        ,misc-definitions-in-headers
+        ,misc-include-cleaner
+        ,misc-header-include-cycle
+        ,misc-override-with-different-visibility
+        ,misc-unconventional-assign-operator
+        ,misc-static-assert
+        ,misc-redundant-expression
+        ,misc-use-internal-linkage
+        ,misc-unused-parameters
+        ,misc-unused-alias-decls
+        ,misc-unused-using-decls
 
         '
 

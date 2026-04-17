@@ -17,17 +17,6 @@ auto to_underlying(E e)
     return static_cast<t>(e);
 }
 
-struct noncopyable
-{
-    noncopyable() = default;
-
-    noncopyable(noncopyable const&) = delete;
-    noncopyable& operator=(noncopyable const&) = delete;
-
-    noncopyable(noncopyable &&) = default;
-    noncopyable& operator=(noncopyable &&) = default;
-};
-
 [[noreturn]] void unimplemented(
     std::source_location = std::source_location::current()
 );
@@ -63,47 +52,101 @@ void hash_combine(sz & seed, T const& v)
     seed ^= hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-template<typename Fn>
-class scope_exit
+} // namespace gt
+
+namespace gt::detail
+{
+
+enum class scope_exit_type
+{
+    exit,    // invoke always
+    success, // invoke only if no exception was thrown
+    fail,    // invoke only if exception was thrown
+};
+
+template<typename Fn, scope_exit_type Type>
+    requires (Type == scope_exit_type::success) || std::is_nothrow_invocable_v<Fn>
+class scope_exit_impl
 {
 public:
-    scope_exit(Fn fn)
+    scope_exit_impl(Fn fn)
         : fn(std::move(fn))
+        , exceptions_count{ std::uncaught_exceptions() }
+        , released { false }
     {
     }
 
-    ~scope_exit()
+    ~scope_exit_impl() noexcept(Type != scope_exit_type::success)
     {
-        fn();
+        if (released)
+            return;
+
+        if constexpr (Type == scope_exit_type::exit)
+            fn();
+        else if constexpr (Type == scope_exit_type::success)
+        {
+            if (exceptions_count == std::uncaught_exceptions())
+                fn();
+        }
+        else if constexpr (Type == scope_exit_type::fail)
+        {
+            if (exceptions_count < std::uncaught_exceptions())
+                fn();
+        }
     }
 
-    scope_exit(scope_exit const&) = delete;
-    scope_exit& operator=(scope_exit const&) = delete;
+    scope_exit_impl(scope_exit_impl const&) = delete;
+    scope_exit_impl& operator=(scope_exit_impl const&) = delete;
 
-    scope_exit(scope_exit && o) noexcept
-        : fn(std::move(o.fn))
+    scope_exit_impl(scope_exit_impl && o) noexcept(std::is_nothrow_move_constructible_v<Fn>)
     {
+        released = std::exchange(o.released, true);
+
+        if (!released)
+        {
+            fn = std::move(o.fn);
+            exceptions_count = o.exceptions_count;
+        }
     }
 
-    scope_exit& operator=(scope_exit o) noexcept
+    scope_exit_impl& operator=(scope_exit_impl o) noexcept(std::is_nothrow_swappable_v<scope_exit_impl>)
     {
         swap(*this, o);
         return *this;
     }
 
-    void swap(scope_exit& o) noexcept
+    void swap(scope_exit_impl& o) noexcept(std::is_nothrow_swappable_v<Fn>)
     {
         using std::swap;
         swap(fn, o.fn);
+        swap(exceptions_count, o.exceptions_count);
+        swap(released, o.released);
     }
 
 private:
-    Fn fn;
+    [[no_unique_address]] Fn fn;
+    int exceptions_count;
+    bool released;
 };
 
-} // namespace gt
+} // namespace gt::detail
+
+namespace gt
+{
+    template<typename Fn>
+    using scope_exit = detail::scope_exit_impl<Fn, detail::scope_exit_type::exit>;
+
+    template<typename Fn>
+    using scope_success = detail::scope_exit_impl<Fn, detail::scope_exit_type::success>;
+
+    template<typename Fn>
+    using scope_fail = detail::scope_exit_impl<Fn, detail::scope_exit_type::fail>;
+}
 
 // TODO! remove or move to separate header
-#define GT_CONCAT(a, b) a ## b
-#define GT_UNIQUE_ID(l) GT_CONCAT(UNIQUE_ID_, l)
-#define GT_SCOPE_EXIT [[maybe_unused]] ::gt::scope_exit GT_UNIQUE_ID(__LINE__) = [&]
+#define GT_DETAIL_CONCAT(a, b) a ## b
+#define GT_DETAIL_UNIQUE_ID(l) GT_DETAIL_CONCAT(GT_DETAIL_UNIQUE_ID_, l)
+
+#define GT_SCOPE_EXIT [[maybe_unused]] ::gt::scope_exit GT_DETAIL_UNIQUE_ID(__LINE__) = [&] noexcept
+#define GT_SCOPE_SUCCESS [[maybe_unused]] ::gt::scope_success GT_DETAIL_UNIQUE_ID(__LINE__) = [&]
+#define GT_SCOPE_FAIL [[maybe_unused]] ::gt::scope_fail GT_DETAIL_UNIQUE_ID(__LINE__) = [&] noexcept

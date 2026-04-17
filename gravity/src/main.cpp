@@ -115,7 +115,6 @@ int main()
     // if (!SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11"))
     //     sdl::log_error();
 
-
     context ctx;
     glEnable(GL_DEPTH_TEST);
 
@@ -152,11 +151,6 @@ int main()
     f32 delta_time{ 0 };
     f32 last_ticks{ 0 };
 
-    GT_LOG_DEBUG("[ImGui] IMGUI_VERSION_NUM: {}\n", IMGUI_VERSION_NUM);
-    GT_LOG_DEBUG(
-        "[ImGui] io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable: {}\n",
-        ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable
-    );
     struct
     {
         bool show_demo_window{ false };
