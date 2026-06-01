@@ -1,2 +1,6 @@
 .cache/
 imgui.ini
+.zed
+compile_commands.json
+build/
+

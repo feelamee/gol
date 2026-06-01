@@ -10,64 +10,8 @@
 namespace gt::gl
 {
 
-detail::resource::operator GLuint() const
+namespace
 {
-    return id;
-}
-
-void link(shader & s)
-{
-    glLinkProgram(s);
-
-    // for some reason linkage errors is not passed into glDebugMessageCallback
-    GLint success;
-    glGetProgramiv(s, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        static GLchar log[1024];
-        glGetProgramInfoLog(s, 1024, nullptr, log);
-        log::err(log::category::gl, "program linkage error: {}\n", log);
-    }
-}
-
-void attach_source(shader & s, stage stage, std::string_view source)
-{
-    auto data = (GLchar const*)source.data();
-    auto const size{ GLint(source.size()) };
-
-    GLuint shader = glCreateShader(to_underlying(stage));
-    glShaderSource(shader, 1, &data, &size);
-    glCompileShader(shader);
-
-    if (0)
-    {
-        GLint success;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            GLchar log[1024];
-            glGetShaderInfoLog(shader, 1024, nullptr, log);
-            log::err(log::category::gl, "shader compilation error: {}\n", log);
-        }
-    }
-
-    glAttachShader(s, shader);
-    glDeleteShader(shader);
-}
-
-void attach_file(shader & s, stage stage, std::filesystem::path const& path)
-{
-    sz size;
-    void * data = SDL_LoadFile(path.c_str(), &size);
-    if (!data)
-    {
-        sdl::log_error();
-        return;
-    }
-
-    attach_source(s, stage, { (char *)data, size });
-    SDL_free(data);
-}
 
 struct vao_info
 {
@@ -167,11 +111,72 @@ static texture make_tex(cubemap const& cm)
     return tex;
 }
 
+}
+
+detail::resource::operator GLuint() const
+{
+    return id;
+}
+
+void link(shader & s)
+{
+    glLinkProgram(s);
+
+    // for some reason linkage errors is not passed into glDebugMessageCallback
+    GLint success;
+    glGetProgramiv(s, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        static GLchar log[1024];
+        glGetProgramInfoLog(s, 1024, nullptr, log);
+        log::err(log::category::gl, "program linkage error: {}\n", log);
+    }
+}
+
+void attach_source(shader & s, stage stage, std::string_view source)
+{
+    auto data{ (GLchar const*)source.data() };
+    auto const size{ GLint(source.size()) };
+
+    GLuint shader{ glCreateShader(to_underlying(stage)) };
+    glShaderSource(shader, 1, &data, &size);
+    glCompileShader(shader);
+
+    if (0)
+    {
+        GLint success;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            GLchar log[1024];
+            glGetShaderInfoLog(shader, 1024, nullptr, log);
+            log::err(log::category::gl, "shader compilation error: {}\n", log);
+        }
+    }
+
+    glAttachShader(s, shader);
+    glDeleteShader(shader);
+}
+
+void attach_file(shader & s, stage stage, std::filesystem::path const& path)
+{
+    sz size;
+    void * data{ SDL_LoadFile(path.c_str(), &size) };
+    if (!data)
+    {
+        sdl::log_error();
+        return;
+    }
+
+    attach_source(s, stage, { (char *)data, size });
+    SDL_free(data);
+}
+
 bool from_file(model & m, u32 location, std::filesystem::path const& path)
 {
     namespace fs = std::filesystem;
 
-    bool has_mesh = false;
+    bool has_mesh{ false };
     image img;
     cubemap cubemap;
     mesh mesh;
@@ -297,6 +302,5 @@ void destroy(vertex_array & a)
 {
     glDeleteVertexArrays(1, &a.id);
 }
-
 
 }

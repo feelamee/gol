@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(gravity::engine LANGUAGES CXX)
 
+# cmake omit -std=c++20 flag when using cxx_std_20 (probably because it is default in GCC 16)
+# and clangd complain without it for some reason...
+set(CMAKE_CXX_STANDARD 20)
+
 add_library(engine)
 add_library(engine::engine ALIAS engine)
 target_sources(
@@ -24,6 +28,7 @@ target_sources(
 		include/engine/algorithm.hpp
 		include/engine/imgui.hpp
 		include/engine/log.hpp
+		include/engine/event_handler.hpp
 
     PRIVATE
     FILE_SET private_headers
@@ -45,6 +50,7 @@ target_sources(
         src/gl.cpp
         src/imgui.cpp
         src/log.cpp
+        src/event_handler.cpp
 )
 target_compile_features(engine PUBLIC cxx_std_20)
 
@@ -52,7 +58,7 @@ include(CPM)
 CPMAddPackage(
   NAME SDL3
   GIT_REPOSITORY "https://github.com/libsdl-org/SDL"
-  GIT_TAG release-3.4.0
+  GIT_TAG release-3.4.10
   OPTIONS "SDL_ASAN ${GRAVITY_SANITIZERS}"
 )
 CPMAddPackage(

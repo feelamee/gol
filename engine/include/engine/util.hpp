@@ -147,6 +147,6 @@ namespace gt
 #define GT_DETAIL_CONCAT(a, b) a ## b
 #define GT_DETAIL_UNIQUE_ID(l) GT_DETAIL_CONCAT(GT_DETAIL_UNIQUE_ID_, l)
 
-#define GT_SCOPE_EXIT [[maybe_unused]] ::gt::scope_exit GT_DETAIL_UNIQUE_ID(__LINE__) = [&] noexcept
-#define GT_SCOPE_SUCCESS [[maybe_unused]] ::gt::scope_success GT_DETAIL_UNIQUE_ID(__LINE__) = [&]
-#define GT_SCOPE_FAIL [[maybe_unused]] ::gt::scope_fail GT_DETAIL_UNIQUE_ID(__LINE__) = [&] noexcept
+#define GT_SCOPE_EXIT [[maybe_unused]] ::gt::scope_exit GT_DETAIL_UNIQUE_ID(__LINE__) = [&]() noexcept
+#define GT_SCOPE_SUCCESS [[maybe_unused]] ::gt::scope_success GT_DETAIL_UNIQUE_ID(__LINE__) = [&]()
+#define GT_SCOPE_FAIL [[maybe_unused]] ::gt::scope_fail GT_DETAIL_UNIQUE_ID(__LINE__) = [&]() noexcept
