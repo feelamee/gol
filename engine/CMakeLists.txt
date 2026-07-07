@@ -19,6 +19,7 @@ target_sources(
 		include/engine/context.hpp
 		include/engine/error.hpp
 		include/engine/sdl.hpp
+		include/engine/sdl_dialog.hpp
 		include/engine/math.hpp
 		include/engine/ranges.hpp
 		include/engine/mesh.hpp
@@ -28,7 +29,7 @@ target_sources(
 		include/engine/algorithm.hpp
 		include/engine/imgui.hpp
 		include/engine/log.hpp
-		include/engine/event_handler.hpp
+		include/engine/scene.hpp
 
     PRIVATE
     FILE_SET private_headers
@@ -50,7 +51,7 @@ target_sources(
         src/gl.cpp
         src/imgui.cpp
         src/log.cpp
-        src/event_handler.cpp
+        src/scene.cpp
 )
 target_compile_features(engine PUBLIC cxx_std_20)
 

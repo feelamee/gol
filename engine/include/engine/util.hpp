@@ -69,10 +69,10 @@ template<typename Fn, scope_exit_type Type>
 class scope_exit_impl
 {
 public:
-    scope_exit_impl(Fn fn)
-        : fn(std::move(fn))
+    scope_exit_impl(Fn fn) noexcept(std::is_nothrow_move_constructible_v<Fn>)
+        : fn{ std::move(fn) }
         , exceptions_count{ std::uncaught_exceptions() }
-        , released { false }
+        , released{ false }
     {
     }
 

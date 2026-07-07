@@ -34,6 +34,18 @@ static bool load(image & r, std::istream & in)
     return true;
 }
 
+static void dump(image const& img, std::ostream & out)
+{
+    out << "P6" << '\n';
+    out << img.size.x << ' ' << img.size.y << '\n';
+    out << 255 << '\n';
+
+    out.write(
+        reinterpret_cast<char const*>(img.data.data()),
+        std::streamsize(img.data.size())
+    );
+}
+
 }
 
 namespace gt
@@ -67,16 +79,16 @@ catch (std::ifstream::failure const& e)
     return false;
 }
 
-void dump(std::ostream & out, image const& img)
+void dump(std::ostream & out, image const& img, image_format fmt)
 {
-    out << "P6" << '\n';
-    out << img.size.x << ' ' << img.size.y << '\n';
-    out << 255 << '\n';
+    switch (fmt)
+    {
+        case image_format::ppm:
+            ppm::dump(img, out);
+            return;
+    }
 
-    out.write(
-        reinterpret_cast<char const*>(img.data.data()),
-        std::streamsize(img.data.size())
-    );
+    log::err("can't dump image: unsupported format\n");
 }
 
 void cubemap::reset()

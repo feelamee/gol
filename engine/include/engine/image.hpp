@@ -3,7 +3,6 @@
 #include <engine/fundamental.hpp>
 #include <engine/math.hpp>
 
-#include <optional>
 #include <filesystem>
 #include <iosfwd>
 
@@ -23,7 +22,12 @@ struct image
 };
 
 bool from_file(image & img, std::filesystem::path const& path);
-void dump(std::ostream & out, image const& img);
+
+enum class image_format
+{
+    ppm,
+};
+void dump(std::ostream & out, image const& img, image_format fmt);
 
 struct cubemap
 {

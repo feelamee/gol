@@ -1,7 +1,5 @@
 #pragma once
 
-#include <engine/util.hpp>
-
 #include <SDL3/SDL.h>
 
 namespace gt

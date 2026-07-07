@@ -156,18 +156,9 @@ context & ctx()
     return *g_context;
 }
 
-static log::category from_gl_source(GLenum s)
-{
-    unimplemented();
-    switch (s)
-    {
-    }
-
-    unreachable();
-}
-
 static log::priority from_gl_severity(GLenum s)
 {
+    return log::priority::err;
     unimplemented();
     switch (s)
     {
@@ -211,7 +202,7 @@ void APIENTRY gl_debug_message_callback(
         return;
 
     log::log(
-        from_gl_source(source), from_gl_severity(severity),
+        log::category::gl, from_gl_severity(severity),
         "ID {}: {}\n",
         id, std::string_view{ msg, sz(length) }
     );

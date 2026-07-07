@@ -2,6 +2,8 @@
 
 #include <source_location>
 
+#include <SDL3/SDL_video.h>
+
 namespace gt::sdl
 {
 

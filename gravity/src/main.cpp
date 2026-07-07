@@ -2,6 +2,7 @@
 #include <engine/context.hpp>
 #include <engine/error.hpp>
 #include <engine/sdl.hpp>
+#include <engine/sdl_dialog.hpp>
 #include <engine/ranges.hpp>
 #include <engine/mesh.hpp>
 #include <engine/image.hpp>
@@ -11,6 +12,7 @@
 #include <engine/imgui.hpp>
 #include <engine/log.hpp>
 #include <engine/log_macro.hpp>
+#include <engine/scene.hpp>
 using namespace gt;
 
 #include <SDL3/SDL.h>
@@ -111,18 +113,14 @@ int main()
         }
     );
 
-    // enable if you want ImGui Viewports support
-    // if (!SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "x11"))
-    //     sdl::log_error();
-
     context ctx;
     glEnable(GL_DEPTH_TEST);
 
-    gl::shader shader_program{ glCreateProgram() };
-    gl::attach_source(shader_program, gl::stage::fragment, fragment_shader_src);
-    gl::attach_source(shader_program, gl::stage::vertex, vertex_shader_src);
-    gl::link(shader_program);
-    GT_SCOPE_EXIT { destroy(shader_program); };
+    gl::shader model_shader_program{ glCreateProgram() };
+    gl::attach_source(model_shader_program, gl::stage::fragment, fragment_shader_src);
+    gl::attach_source(model_shader_program, gl::stage::vertex, vertex_shader_src);
+    gl::link(model_shader_program);
+    GT_SCOPE_EXIT { destroy(model_shader_program); };
 
     constexpr auto model_filepath{ "/home/missed/code/gravity/assets/sasuke/sasuke.model" };
     gl::model sasuke_model;
@@ -142,11 +140,9 @@ int main()
     if (!from_file(skybox_model, 0, skybox_filepath))
         throw error{ "[ERROR][ENGINE] can't load model: {}", skybox_filepath };
 
-    vec3 pos{ 0.0f, 0.0f, 0.0f };
-    f32 scaling{ 1.0f };
-    f32 rotation{ 0.0f };
-
-    camera cam;
+    linear_scene scene;
+    // scene.push<model_scene_node>(sasuke_model, model_shader_program);
+    scene.push<skybox_scene_node>(skybox_model, skybox_shader_program);
 
     f32 delta_time{ 0 };
     f32 last_ticks{ 0 };
@@ -193,59 +189,50 @@ int main()
                     break;
 
                 case SDL_EVENT_KEY_UP:
-                    if (ev.key.key == SDLK_GRAVE)
-                        imgui_state.show_demo_window = !imgui_state.show_demo_window;
+                    switch (ev.key.key)
+                    {
+                        case SDLK_GRAVE:
+                            imgui_state.show_demo_window = !imgui_state.show_demo_window;
+                            break;
+
+                        case SDLK_O:
+                            if (ev.key.mod & SDL_KMOD_CTRL)
+                            {
+                                select_file_dialog(
+                                    [&](auto const& files)
+                                    {
+                                        for (auto const& f : files)
+                                        {
+                                            gl::model model;
+                                            if (!from_file(model, 0, f))
+                                            {
+                                                log::err("[ERROR][ENGINE] can't load model: {}", f);
+                                                continue;
+                                            }
+
+                                            scene.push<model_scene_node>(model, model_shader_program);
+                                        }
+                                    },
+                                    { .many = true }
+                                );
+                            }
+                    }
                     break;
             }
 
-            cam.handle_event(ev);
+            scene.handle_event(ev);
         }
 
-        {
-            cam.simulate(delta_time);
-        }
+        scene.simulate(delta_time);
 
         int w = 960, h = 540;
         if (!SDL_GetWindowSize(ctx.window, &w, &h))
             sdl::log_error();
 
-        mat4 const projection = perspective(radians(45.0f), f32(w) / f32(h), 0.01f, 100.0f);
-        mat4 const view = cam.view();
-
-        {
-            bind(shader_program);
-
-            mat4 model = scale(
-                rotate(
-                    translate( mat4{ 1.0f }, pos),
-                    rotation,
-                    vec3{ 0.0f, 0.0f, -1.0f }
-                ),
-                vec3{ scaling }
-            );
-
-            using gt::gl::bind;
-            bind(3, model);
-            bind(4, view);
-            bind(5, projection);
-            bind(6, sasuke_model);
-
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glDrawElements(GL_TRIANGLES, GLsizei(sasuke_model.indices_count), GL_UNSIGNED_INT, nullptr);
-        }
-
-        {
-            glDepthFunc(GL_LEQUAL);
-            bind(skybox_shader_program);
-
-            using gt::gl::bind;
-            bind(1, view);
-            bind(2, projection);
-            bind(3, skybox_model);
-
-            glDrawElements(GL_TRIANGLES, GLsizei(skybox_model.indices_count), GL_UNSIGNED_INT, nullptr);
-            glDepthFunc(GL_LESS);
-        }
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        scene.draw({
+            .projection = perspective(radians(45.0f), f32(w) / f32(h), 0.01f, 100.0f)
+        });
 
         {
             im::frame();
@@ -256,10 +243,8 @@ int main()
             im::render();
         }
 
-        {
-            if (!SDL_GL_SwapWindow(ctx.window))
-                sdl::log_error();
-        }
+        if (!SDL_GL_SwapWindow(ctx.window))
+            sdl::log_error();
 
         {
             SDL_Time ticks{};
