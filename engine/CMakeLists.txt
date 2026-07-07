@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(gravity::engine LANGUAGES CXX)
+project(gol::engine LANGUAGES CXX)
 
 # cmake omit -std=c++20 flag when using cxx_std_20 (probably because it is default in GCC 16)
 # and clangd complain without it for some reason...
@@ -60,7 +60,7 @@ CPMAddPackage(
   NAME SDL3
   GIT_REPOSITORY "https://github.com/libsdl-org/SDL"
   GIT_TAG release-3.4.10
-  OPTIONS "SDL_ASAN ${GRAVITY_SANITIZERS}"
+  OPTIONS "SDL_ASAN ${GOL_SANITIZERS}"
 )
 CPMAddPackage(
   NAME glm
@@ -72,10 +72,10 @@ CPMAddPackage(
 target_link_libraries(
     engine
     PUBLIC
-        $<$<BOOL:${GRAVITY_DEV}>:dev_flags>
-        $<$<BOOL:${GRAVITY_SANITIZERS}>:sanitizers>
-        $<$<BOOL:${GRAVITY_ASSERTIONS}>:stdlib_assertions>
-        $<$<BOOL:${GRAVITY_HARDENING}>:hardening>
+        $<$<BOOL:${GOL_DEV}>:dev_flags>
+        $<$<BOOL:${GOL_SANITIZERS}>:sanitizers>
+        $<$<BOOL:${GOL_ASSERTIONS}>:stdlib_assertions>
+        $<$<BOOL:${GOL_HARDENING}>:hardening>
 )
 
 # TODO! make PRIVATE after removing all SDL/OpenGL code from public interface

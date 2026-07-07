@@ -1,6 +1,6 @@
 #include <engine/scene.hpp>
 
-namespace gt
+namespace gol
 {
 
 void scene_node::handle_event(SDL_Event)
@@ -40,7 +40,7 @@ model_scene_node::model_scene_node(gl::model m, gl::shader s)
 
 void model_scene_node::draw(draw_info const & di) const
 {
-    using gt::gl::bind;
+    using gol::gl::bind;
     bind(shader);
     bind(3, model_mat());
     bind(4, di.view);
@@ -63,7 +63,7 @@ void skybox_scene_node::draw(draw_info const& di) const
     glDepthFunc(GL_LEQUAL);
     bind(shader);
 
-    using gt::gl::bind;
+    using gol::gl::bind;
     bind(1, di.view);
     bind(2, di.projection);
     bind(3, model);

@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-namespace gt
+namespace gol
 {
     using glm::vec2;
     using glm::vec3;

@@ -2,7 +2,7 @@
 
 #include <ranges>
 
-namespace gt::rng::detail
+namespace gol::rng::detail
 {
 
 using namespace std::ranges;
@@ -52,7 +52,7 @@ struct enumerate_t
 
 }
 
-namespace gt::rng
+namespace gol::rng
 {
 
 using namespace std::ranges;
@@ -64,7 +64,7 @@ inline constexpr detail::enumerate_with_t<Size> enumerate_with_view;
 
 }
 
-namespace gt::vs
+namespace gol::vs
 {
 
 using namespace std::views;

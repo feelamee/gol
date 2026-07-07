@@ -2,7 +2,7 @@
 
 #include <format>
 
-namespace gt::log
+namespace gol::log
 {
 
 enum class category

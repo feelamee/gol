@@ -7,7 +7,7 @@
 
 #include <fstream>
 
-namespace gt::gl
+namespace gol::gl
 {
 
 namespace

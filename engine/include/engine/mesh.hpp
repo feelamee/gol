@@ -4,7 +4,7 @@
 
 #include <vector>
 
-namespace gt
+namespace gol
 {
 
 enum class attrib

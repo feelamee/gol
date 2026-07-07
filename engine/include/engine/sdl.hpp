@@ -4,7 +4,7 @@
 
 #include <SDL3/SDL_video.h>
 
-namespace gt::sdl
+namespace gol::sdl
 {
 
 void log_error(std::source_location l = std::source_location::current());

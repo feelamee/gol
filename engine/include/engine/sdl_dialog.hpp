@@ -3,7 +3,7 @@
 #include <engine/context.hpp>
 #include <engine/sdl.hpp>
 
-namespace gt
+namespace gol
 {
 
 struct select_file_dialog_params
@@ -20,7 +20,7 @@ void select_file_dialog(Fn&& fn, select_file_dialog_params const & params = {})
         {
             auto * fn = static_cast<Fn *>(userdata);
             assert(fn);
-            GT_SCOPE_EXIT { delete fn; };
+            GOL_SCOPE_EXIT { delete fn; };
 
             if (!files)
             {

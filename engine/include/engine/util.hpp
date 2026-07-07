@@ -6,7 +6,7 @@
 #include <string_view>
 #include <source_location>
 
-namespace gt
+namespace gol
 {
 
 template<typename E>
@@ -52,9 +52,9 @@ void hash_combine(sz & seed, T const& v)
     seed ^= hash<T>{}(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-} // namespace gt
+} // namespace gol
 
-namespace gt::detail
+namespace gol::detail
 {
 
 enum class scope_exit_type
@@ -129,9 +129,9 @@ private:
     bool released;
 };
 
-} // namespace gt::detail
+} // namespace gol::detail
 
-namespace gt
+namespace gol
 {
     template<typename Fn>
     using scope_exit = detail::scope_exit_impl<Fn, detail::scope_exit_type::exit>;
@@ -144,9 +144,9 @@ namespace gt
 }
 
 // TODO! remove or move to separate header
-#define GT_DETAIL_CONCAT(a, b) a ## b
-#define GT_DETAIL_UNIQUE_ID(l) GT_DETAIL_CONCAT(GT_DETAIL_UNIQUE_ID_, l)
+#define GOL_DETAIL_CONCAT(a, b) a ## b
+#define GOL_DETAIL_UNIQUE_ID(l) GOL_DETAIL_CONCAT(GOL_DETAIL_UNIQUE_ID_, l)
 
-#define GT_SCOPE_EXIT [[maybe_unused]] ::gt::scope_exit GT_DETAIL_UNIQUE_ID(__LINE__) = [&]() noexcept
-#define GT_SCOPE_SUCCESS [[maybe_unused]] ::gt::scope_success GT_DETAIL_UNIQUE_ID(__LINE__) = [&]()
-#define GT_SCOPE_FAIL [[maybe_unused]] ::gt::scope_fail GT_DETAIL_UNIQUE_ID(__LINE__) = [&]() noexcept
+#define GOL_SCOPE_EXIT [[maybe_unused]] ::gol::scope_exit GOL_DETAIL_UNIQUE_ID(__LINE__) = [&]() noexcept
+#define GOL_SCOPE_SUCCESS [[maybe_unused]] ::gol::scope_success GOL_DETAIL_UNIQUE_ID(__LINE__) = [&]()
+#define GOL_SCOPE_FAIL [[maybe_unused]] ::gol::scope_fail GOL_DETAIL_UNIQUE_ID(__LINE__) = [&]() noexcept

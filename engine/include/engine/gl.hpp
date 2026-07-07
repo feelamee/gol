@@ -7,7 +7,7 @@
 
 #include <string_view>
 
-namespace gt::gl
+namespace gol::gl
 {
 
 namespace detail

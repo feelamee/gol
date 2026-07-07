@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 
-namespace gt
+namespace gol
 {
 
 struct context

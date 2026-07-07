@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
-project(gravity)
+project(gol)
 
 
-option(GRAVITY_DEV "build for development" OFF)
-option(GRAVITY_SANITIZERS "enable sanitizers" ${GRAVITY_DEV})
-option(GRAVITY_ASSERTIONS "enable assertions" ${GRAVITY_DEV})
-option(GRAVITY_HARDENING "enable hardening" OFF)
+option(GOL_DEV "build for development" OFF)
+option(GOL_SANITIZERS "enable sanitizers" ${GOL_DEV})
+option(GOL_ASSERTIONS "enable assertions" ${GOL_DEV})
+option(GOL_HARDENING "enable hardening" OFF)
 
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -14,4 +14,4 @@ include(common)
 
 add_subdirectory(vendor)
 add_subdirectory(engine)
-add_subdirectory(gravity)
+add_subdirectory(gol)

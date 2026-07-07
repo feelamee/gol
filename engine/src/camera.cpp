@@ -3,7 +3,7 @@
 #include <engine/context.hpp>
 #include <engine/sdl.hpp>
 
-namespace gt
+namespace gol
 {
 
 camera::camera()
@@ -24,7 +24,7 @@ camera::camera(vec3 const& pos, vec3 const& dir, vec3 const& up)
 
 void camera::handle_event(SDL_Event const& ev)
 {
-    SDL_Window * window = gt::ctx().window;
+    SDL_Window * window = gol::ctx().window;
 
     switch (ev.type)
     {

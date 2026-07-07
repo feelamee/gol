@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL_log.h>
 
-namespace gt
+namespace gol
 {
 
 [[noreturn]] void unimplemented(std::source_location l)

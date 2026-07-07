@@ -3,7 +3,7 @@
 #include <engine/error.hpp>
 #include <engine/log.hpp>
 
-namespace gt::sdl
+namespace gol::sdl
 {
 
 void log_error(std::source_location l)

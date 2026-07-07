@@ -2,7 +2,7 @@
 
 #include <format>
 
-namespace gt
+namespace gol
 {
 
 struct error : std::runtime_error

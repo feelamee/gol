@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace gt::rng::detail
+namespace gol::rng::detail
 {
 
 using namespace std::ranges;
@@ -66,7 +66,7 @@ struct contains_t
 
 }
 
-namespace gt::rng
+namespace gol::rng
 {
 
 using namespace std::ranges;

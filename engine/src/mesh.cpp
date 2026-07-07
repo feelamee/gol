@@ -11,7 +11,7 @@
 
 #include <SDL3/SDL_assert.h>
 
-namespace gt::obj
+namespace gol::obj
 {
 
 static bool isws(char c)
@@ -203,7 +203,7 @@ static bool load(mesh & m, std::istream & in)
 
 }
 
-namespace gt
+namespace gol
 {
 
 sz mesh::stride() const
@@ -247,4 +247,4 @@ catch (std::ifstream::failure const& f)
     return false;
 }
 
-} // namespace gt
+} // namespace gol

@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <climits>
 
-namespace gt
+namespace gol
 {
 
 using sz = std::size_t;

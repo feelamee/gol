@@ -13,7 +13,7 @@
 #include <engine/log.hpp>
 #include <engine/log_macro.hpp>
 #include <engine/scene.hpp>
-using namespace gt;
+using namespace gol;
 
 #include <SDL3/SDL.h>
 
@@ -120,22 +120,22 @@ int main()
     gl::attach_source(model_shader_program, gl::stage::fragment, fragment_shader_src);
     gl::attach_source(model_shader_program, gl::stage::vertex, vertex_shader_src);
     gl::link(model_shader_program);
-    GT_SCOPE_EXIT { destroy(model_shader_program); };
+    GOL_SCOPE_EXIT { destroy(model_shader_program); };
 
-    constexpr auto model_filepath{ "/home/missed/code/gravity/assets/sasuke/sasuke.model" };
+    constexpr auto model_filepath{ "/home/missed/code/gol/assets/sasuke/sasuke.model" };
     gl::model sasuke_model;
     if (!from_file(sasuke_model, 0, model_filepath))
         throw error{ "[ERROR][ENGINE] can't load model: {}", model_filepath };
 
-    GT_SCOPE_EXIT { destroy(sasuke_model); };
+    GOL_SCOPE_EXIT { destroy(sasuke_model); };
 
     gl::shader skybox_shader_program{ glCreateProgram() };
     gl::attach_source(skybox_shader_program, gl::stage::fragment, skybox_fragment_shader_src);
     gl::attach_source(skybox_shader_program, gl::stage::vertex, skybox_vertex_shader_src);
     gl::link(skybox_shader_program);
-    GT_SCOPE_EXIT { destroy(skybox_shader_program); };
+    GOL_SCOPE_EXIT { destroy(skybox_shader_program); };
 
-    constexpr auto skybox_filepath{ "/home/missed/code/gravity/assets/skybox/skybox.model" };
+    constexpr auto skybox_filepath{ "/home/missed/code/gol/assets/skybox/skybox.model" };
     gl::model skybox_model;
     if (!from_file(skybox_model, 0, skybox_filepath))
         throw error{ "[ERROR][ENGINE] can't load model: {}", skybox_filepath };

@@ -4,7 +4,7 @@
 
 #include <fstream>
 
-namespace gt::ppm
+namespace gol::ppm
 {
 
 using namespace std::string_view_literals;
@@ -48,7 +48,7 @@ static void dump(image const& img, std::ostream & out)
 
 }
 
-namespace gt
+namespace gol
 {
 
 void image::reset()

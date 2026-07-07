@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <iosfwd>
 
-namespace gt
+namespace gol
 {
 
 // Represents image data in memory

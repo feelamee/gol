@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL_log.h>
 
-namespace gt::log
+namespace gol::log
 {
 
 static SDL_LogCategory to_sdl(category c)

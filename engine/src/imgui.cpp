@@ -4,7 +4,7 @@
 #include <imgui/imgui_impl_sdl3.h>
 #include <imgui/imgui_impl_opengl3.h>
 
-namespace gt::im
+namespace gol::im
 {
 
 void handle_event(SDL_Event const& ev)

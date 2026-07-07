@@ -36,7 +36,7 @@
             "displayName": "preset for development",
             "inherits": [ "debug-config", "ninja" ],
             "cacheVariables": {
-                "GRAVITY_DEV": "ON"
+                "GOL_DEV": "ON"
             }
         },
 

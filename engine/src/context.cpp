@@ -13,7 +13,7 @@
 #include <imgui/imgui_impl_sdl3.h>
 #include <imgui/imgui_impl_opengl3.h>
 
-namespace gt
+namespace gol
 {
 
 static void APIENTRY gl_debug_message_callback(
@@ -44,16 +44,16 @@ context::context()
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         sdl::throw_error();
-    GT_SCOPE_FAIL { SDL_Quit(); };
+    GOL_SCOPE_FAIL { SDL_Quit(); };
 
     window = SDL_CreateWindow(
-        "gravity simulation",
+        "gol simulation",
         960, 540,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
     );
     if (!window)
         sdl::throw_error();
-    GT_SCOPE_FAIL { SDL_DestroyWindow(window); };
+    GOL_SCOPE_FAIL { SDL_DestroyWindow(window); };
 
     constexpr auto profile =
 #if defined(__WIN32__)
@@ -73,7 +73,7 @@ context::context()
     glcontext = SDL_GL_CreateContext(window);
     if (!glcontext)
         sdl::throw_error();
-    GT_SCOPE_FAIL { SDL_GL_DestroyContext(glcontext); };
+    GOL_SCOPE_FAIL { SDL_GL_DestroyContext(glcontext); };
 
     auto const load_gl_fn = [](char const* fn)
     {
@@ -124,11 +124,11 @@ context::context()
 
     if (!ImGui_ImplSDL3_InitForOpenGL(window, glcontext))
         throw error{ "[ERROR][ENGINE] can't initalize ImGui SDL3 backend for OpenGL" };
-    GT_SCOPE_FAIL { ImGui_ImplSDL3_Shutdown(); };
+    GOL_SCOPE_FAIL { ImGui_ImplSDL3_Shutdown(); };
 
     if (!ImGui_ImplOpenGL3_Init())
         throw error{ "[ERROR][ENGINE] can't initalize ImGui OpenGL3 backend" };
-    GT_SCOPE_FAIL { ImGui_ImplOpenGL3_Shutdown(); };
+    GOL_SCOPE_FAIL { ImGui_ImplOpenGL3_Shutdown(); };
 
     log::info("Dear ImGui is initialized: {}\n", std::string_view(ImGui::GetVersion()));
 
@@ -151,7 +151,7 @@ context::~context()
 context & ctx()
 {
     if (!g_context)
-        throw error("[ERROR][engine] gt::context must be created first");
+        throw error("[ERROR][engine] gol::context must be created first");
 
     return *g_context;
 }

@@ -4,7 +4,7 @@
 #include <engine/gl.hpp>
 #include <engine/camera.hpp>
 
-namespace gt
+namespace gol
 {
 
 struct scene_node

@@ -5,7 +5,7 @@
 
 #include <SDL3/SDL_events.h>
 
-namespace gt
+namespace gol
 {
 
 struct camera
