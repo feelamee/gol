@@ -5,8 +5,37 @@ project(gol::gol LANGUAGES CXX)
 # and clangd complain without it for some reason...
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(
-    gol-simulation
-    src/main.cpp
-)
-target_link_libraries(gol-simulation PRIVATE engine::engine)
+set(targets gol-simulation)
+if (GOL_TESTS)
+    list(APPEND targets gol-simulation-test)
+endif()
+
+foreach(target IN LISTS targets)
+    add_executable(${target})
+    target_sources(
+        ${target}
+
+        PRIVATE
+            src/world.cpp
+
+        PRIVATE
+        FILE_SET private_headers
+        TYPE HEADERS
+        BASE_DIRS
+            include/
+        FILES
+            include/gol/world.hpp
+    )
+    target_link_libraries(${target} PRIVATE engine::engine)
+    target_link_libraries(${target} PRIVATE doctest::doctest)
+endforeach()
+
+target_sources(gol-simulation PRIVATE src/main.cpp)
+target_compile_definitions(gol-simulation PRIVATE DOCTEST_CONFIG_DISABLE)
+
+if (GOL_TESTS)
+    target_sources(gol-simulation-test PRIVATE src/main.test.cpp)
+    # TODO! kludge, required because main.test.cpp add define before including doctest
+    set_source_files_properties(src/main.test.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+endif()
+

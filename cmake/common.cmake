@@ -81,5 +81,5 @@ target_compile_options(
 )
 
 function(dbg var)
-    message(DEBUG "${var}: ${${var}}")
+    message(STATUS "${var}: ${${var}}")
 endfunction()

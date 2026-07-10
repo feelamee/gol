@@ -38,9 +38,7 @@ target_sources(
         include/
         src/
     FILES
-)
-target_sources(
-    engine
+
     PRIVATE
         src/util.cpp
         src/context.cpp

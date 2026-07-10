@@ -15,6 +15,8 @@
 #include <engine/scene.hpp>
 using namespace gol;
 
+#include <gol/world.hpp>
+
 #include <SDL3/SDL.h>
 
 #include <glad/glad.h>
