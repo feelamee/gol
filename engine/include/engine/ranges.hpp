@@ -14,7 +14,8 @@ constexpr auto impl(R&& r)
         std::forward<R>(r),
         [i = Size(0)](auto&& v) mutable
         {
-            return std::pair{ i++, std::forward<decltype(v)>(v) };
+            using tuple = std::tuple<Size, std::ranges::range_reference_t<R>>;
+            return tuple(i++, std::forward<decltype(v)>(v));
         }
     );
 }
