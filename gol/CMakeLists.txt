@@ -17,6 +17,7 @@ foreach(target IN LISTS targets)
 
         PRIVATE
             src/world.cpp
+            src/world_json.cpp
 
         PRIVATE
         FILE_SET private_headers
@@ -25,9 +26,11 @@ foreach(target IN LISTS targets)
             include/
         FILES
             include/gol/world.hpp
+            include/gol/world_json.hpp
     )
     target_link_libraries(${target} PRIVATE engine::engine)
     target_link_libraries(${target} PRIVATE doctest::doctest)
+    target_link_libraries(${target} PRIVATE nlohmann::json)
 endforeach()
 
 target_sources(gol-simulation PRIVATE src/main.cpp)

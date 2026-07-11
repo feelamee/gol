@@ -131,6 +131,26 @@ void world::iterate(u32 steps)
     }
 }
 
+void world::clear()
+{
+    row_count = 0;
+    column_count = 0;
+    data.clear();
+}
+
+bool world::empty() const
+{
+    return row_count == 0 && column_count == 0 && data.empty();
+}
+
+void world::resize(i32 row_count, i32 column_count)
+{
+    check_invariants(row_count, column_count);
+    this->row_count = row_count;
+    this->column_count = column_count;
+    data.resize(sz(row_count * column_count));
+}
+
 void world::check_invariants(i32 row_count, i32 column_count, std::optional<i32> data_size)
 {
     if (
@@ -339,4 +359,52 @@ TEST_CASE("world::iterate::block")
     auto const iterated = [](world w, u32 steps = 1) { w.iterate(steps); return w; };
     REQUIRE_EQ(iterated(input),    output);
     REQUIRE_EQ(iterated(input, 3), output);
+}
+
+TEST_CASE("world::clear,empty")
+{
+    using namespace gol;
+
+    world w;
+    REQUIRE(w.empty());
+
+    world w2;
+    w2.clear();
+    REQUIRE(w2 == world{});
+    REQUIRE(w2.empty());
+
+    using namespace gol;
+    constexpr auto D = cell::dead;
+    constexpr auto A = cell::alive;
+    world w3{
+        4, 4,
+        {
+            D, D, D, D,
+            D, A, A, D,
+            D, A, A, D,
+            D, D, D, D,
+        }
+    };
+    REQUIRE(!w3.empty());
+    REQUIRE(w3 != w2);
+    w3.clear();
+    REQUIRE(w3.empty());
+    REQUIRE(w3 == w2);
+}
+
+TEST_CASE("world::resize")
+{
+    using namespace gol;
+
+    // dont provide any garantees about world values to simplify impl
+    world w;
+    w.resize(0, 0);
+    REQUIRE(w == world{});
+
+    CHECK_THROWS_AS(w.resize(3, -4), world::error);
+    CHECK_THROWS_AS(w.resize(-3, 4), world::error);
+
+    w.resize(1, 2);
+    REQUIRE(w.row_count    == 1);
+    REQUIRE(w.column_count == 2);
 }

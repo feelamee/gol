@@ -65,6 +65,11 @@ struct world
 
     void iterate(u32 steps = 1);
 
+    void clear();
+    bool empty() const;
+
+    void resize(i32 row_count, i32 column_count);
+
     bool operator==(world const&) const = default;
 
     // TODO! optimize by space, pack 8 cell's into one byte
