@@ -10,6 +10,7 @@ namespace gol
 struct world_scene_node : scene_node
 {
     world_scene_node();
+    world_scene_node(world w);
     ~world_scene_node() override;
 
     void handle_event(SDL_Event) override;

@@ -16,6 +16,7 @@ Checks: '
         ,readability-suspicious-call-argument
         ,readability-use-anyofallof
         ,readability-use-std-min-max
+        ,readability-redundant-access-specifier
 
         ,modernize-use-override
         ,modernize-use-nullptr

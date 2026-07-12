@@ -75,19 +75,13 @@ namespace gol
 {
 
 world_scene_node::world_scene_node()
+    : world_scene_node(world{})
 {
-    constexpr auto D = cell::dead;
-    constexpr auto A = cell::alive;
-    gol_world = {
-        4, 4,
-        {
-            A, A, D, D,
-            D, D, A, A,
-            D, D, A, D,
-            D, D, A, D,
-        }
-    };
+}
 
+world_scene_node::world_scene_node(world w)
+    : gol_world(std::move(w))
+{
     gl::from_mem(GL_SHADER_STORAGE_BUFFER, gpu_world, gol_world.data);
 
     constexpr std::array<GLuint, 36> cube_indices = {

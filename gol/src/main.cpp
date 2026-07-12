@@ -33,8 +33,47 @@ using namespace gol;
 
 #include <cstdlib>
 #include <csignal>
+#include <fstream>
 
-int main()
+struct input_data
+{
+    world input_world = {
+        5, 5,
+        {
+            cell::dead, cell::dead, cell::dead,  cell::dead, cell::dead,
+            cell::dead, cell::dead, cell::alive, cell::dead, cell::dead,
+            cell::dead, cell::dead, cell::alive, cell::dead, cell::dead,
+            cell::dead, cell::dead, cell::alive, cell::dead, cell::dead,
+            cell::dead, cell::dead, cell::dead,  cell::dead, cell::dead,
+        }
+    };
+    struct simulation
+    {
+        u32 fps = 60;
+
+        constexpr inline static u32 infinite_cycles = u32(-1);
+        u32 cycles = infinite_cycles;
+    } input_simulation;
+};
+
+void from_json(nlohmann::json const& j, input_data::simulation & r)
+{
+    if (!j.at("fps").is_number_unsigned())
+        throw error{ "key 'fps' must have unsigned type" };
+    if (!j.at("cycles").is_number_unsigned())
+        throw error{ "key 'cycles' must have unsigned type" };
+
+    j.at("fps").get_to(r.fps);
+    j.at("cycles").get_to(r.cycles);
+};
+
+void from_json(nlohmann::json const& j, input_data & r)
+{
+    j.at("simulation").get_to(r.input_simulation);
+    j.at("world").get_to(r.input_world);
+}
+
+int main(int, char** argv)
 {
     // register custom SIGINT to allow Ctrl+C immediately close program even if assets loading...
     std::signal(
@@ -49,10 +88,49 @@ int main()
     context ctx;
     glEnable(GL_DEPTH_TEST);
 
+    auto const cwd = std::filesystem::path(argv[0]).parent_path();
+    auto const input_path = cwd / "game_of_life_input.json";
+    input_data input;
+    try
+    {
+        std::ifstream input_json_ifstream{ input_path };
+        if (!input_json_ifstream.is_open())
+            throw error{ "can't open file" };
+
+        auto const input_json = nlohmann::json::parse(input_json_ifstream);
+        input = input_json.get<input_data>();
+    }
+    catch (std::exception const& e)
+    {
+        log::err(
+            "Error while loading {}:"
+            "\n    what(): {}",
+            input_path.string(), e.what()
+        );
+    }
+
     linear_scene scene;
     scene.push<skybox_scene_node>("/home/missed/code/gol/assets/skybox/skybox.model");
-    scene.push<world_scene_node>();
-    // scene.push<model_scene_node>("/home/missed/code/gol/assets/sasuke/sasuke.model");
+    auto & world_node = scene.push<world_scene_node>(input.input_world);
+
+    GOL_SCOPE_EXIT
+    {
+        nlohmann::json j;
+        try
+        {
+            to_json(j["result"], world_node.gol_world);
+            std::ofstream out{ cwd / "game_of_life_output.json" };
+            out << j.dump(/*indent*/4);
+        }
+        catch (std::exception const& e)
+        {
+            log::err(
+                "Something bad happens...:"
+                "\n    what(): {}",
+                e.what()
+            );
+        }
+    };
 
     f32 delta_time{ 0 };
     f32 last_ticks{ 0 };

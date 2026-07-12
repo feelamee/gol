@@ -24,7 +24,6 @@ target_sources(
 		include/engine/ranges.hpp
 		include/engine/mesh.hpp
 		include/engine/image.hpp
-		include/engine/camera.hpp
 		include/engine/gl.hpp
 		include/engine/algorithm.hpp
 		include/engine/imgui.hpp
@@ -45,7 +44,6 @@ target_sources(
         src/sdl.cpp
         src/mesh.cpp
         src/image.cpp
-        src/camera.cpp
         src/gl.cpp
         src/imgui.cpp
         src/log.cpp

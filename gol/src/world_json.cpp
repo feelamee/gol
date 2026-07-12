@@ -4,9 +4,8 @@
 namespace gol
 {
 
-nlohmann::json to_json(world const & w)
+void to_json(nlohmann::json & j, world const & w)
 {
-    nlohmann::json j;
     j["width"] = w.column_count;
     j["height"] = w.row_count;
 
@@ -19,43 +18,32 @@ nlohmann::json to_json(world const & w)
 
         j["cells"].push_back(std::move(s));
     }
-
-    return j;
 }
 
-bool from_json(nlohmann::json const & j, world & w)
+void from_json(nlohmann::json const & j, world & w)
 {
-    // TODO!:
-    // - return error description
-    // - try to load even when incorrect format provided
-
-    if (!j.is_object())
-        return false;
-
-    auto const& row_count    = j["width"];
-    auto const& column_count = j["height"];
-    if (!row_count.is_number())
-        return false;
-    if (!column_count.is_number())
-        return false;
+    i32 const width = j.at("width");
+    i32 const height = j.at("height");
 
     w.clear();
-    w.resize(row_count, column_count);
+    w.resize(height, width);
 
-    auto const& cells = j["cells"];
-    if (!cells.is_array())
-        return false;
-    if (std::cmp_not_equal(cells.size(), w.row_count))
-        return false;
+    auto const& cells = j.find("cells");
+    if (cells == j.end())
+        throw world::error{ "json must have 'cells' key" };
+    if (!cells.value().is_array())
+        throw world::error{ "'cells' key must be array" };
+    if (std::cmp_not_equal(cells.value().size(), w.row_count))
+        throw world::error{ "'cells' array must be of size 'height' {} {}", cells.value().size(), w.row_count };
 
-    for (auto const& [r, row] : vs::enumerate_with<i32>(cells))
+    for (auto const& [r, row] : vs::enumerate_with<i32>(cells.value()))
     {
         if (!row.is_string())
-            return false;
+            throw world::error{ "'cells' must be array of strings" };
 
         auto const& rowstr = row.get_ref<nlohmann::json::string_t const&>();
         if (std::cmp_not_equal(rowstr.size(), w.column_count))
-            return false;
+            throw world::error{ "each element of 'cells' must be of size 'width'" };
 
         for (auto const& [c, cell] : vs::enumerate_with<i32>(rowstr))
         {
@@ -63,12 +51,10 @@ bool from_json(nlohmann::json const & j, world & w)
             {
                 case '*': w.get(r, c) = cell::alive; break;
                 case '.': w.get(r, c) = cell::dead; break;
-                default: return false;
+                default: throw world::error{ "each element of 'cells' must be string of '*' or '.' characters" };
             }
         }
     }
-
-    return true;
 }
 
 }
@@ -80,7 +66,8 @@ TEST_CASE("world::to_json,from_json")
     using namespace gol;
 
     world w{ 3, 3 };
-    auto j = to_json(w);
+    nlohmann::json j;
+    REQUIRE_NOTHROW(to_json(j, w));
 
     INFO(w);
     INFO(j.dump());
@@ -114,18 +101,18 @@ TEST_CASE("world::to_json,from_json")
     }
 
     world w2;
-    REQUIRE(from_json(j, w2));
+    REQUIRE_NOTHROW(from_json(j, w2));
     REQUIRE(w2 == w);
 
     auto const j2 = nlohmann::json::parse(R"({ "width": 1, "height": 1, "cells": [ "." ] })");
-    REQUIRE(from_json(j2, w));
+    REQUIRE_NOTHROW(from_json(j2, w));
     REQUIRE(w.row_count == 1);
     REQUIRE(w.column_count == 1);
     REQUIRE(w.get(0, 0) == cell::dead);
 
-    REQUIRE_FALSE(from_json(R"({ "width": 1, "height": 1, "cells": [ 5 ] })", w));
-    REQUIRE_FALSE(from_json(R"({ "width": 1, "height": 1 })", w));
-    REQUIRE_FALSE(from_json(R"({ "width": 1, "cells": [ "*" ] })", w));
-    REQUIRE_FALSE(from_json(R"({ "width": [], "height": 1, "cells": [ "*" ] })", w));
-    REQUIRE_FALSE(from_json(R"({ "width": -1, "height": 1, "cells": [] })", w));
+    CHECK_THROWS(from_json(R"({ "width": 1, "height": 1, "cells": [ 5 ] })", w));
+    CHECK_THROWS(from_json(R"({ "width": 1, "height": 1 })", w));
+    CHECK_THROWS(from_json(R"({ "width": 1, "cells": [ "*" ] })", w));
+    CHECK_THROWS(from_json(R"({ "width": [], "height": 1, "cells": [ "*" ] })", w));
+    CHECK_THROWS(from_json(R"({ "width": -1, "height": 1, "cells": [] })", w));
 }
