@@ -63,29 +63,6 @@ int main()
         while (SDL_PollEvent(&ev))
         {
             im::handle_event(ev);
-
-            if (rng::contains({
-                SDL_EVENT_KEY_DOWN,
-                SDL_EVENT_KEY_UP,
-                SDL_EVENT_TEXT_EDITING,
-                SDL_EVENT_TEXT_INPUT,
-            }, ev.key.type))
-            {
-                if (ImGui::GetIO().WantCaptureKeyboard)
-                    continue;
-            }
-
-            if (rng::contains({
-                SDL_EVENT_MOUSE_MOTION,
-                SDL_EVENT_MOUSE_BUTTON_DOWN,
-                SDL_EVENT_MOUSE_BUTTON_UP,
-                SDL_EVENT_MOUSE_WHEEL,
-            }, ev.key.type))
-            {
-                if (ImGui::GetIO().WantCaptureMouse)
-                    continue;
-            }
-
             switch (ev.type)
             {
                 case SDL_EVENT_QUIT: return EXIT_SUCCESS;

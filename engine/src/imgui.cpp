@@ -1,4 +1,5 @@
 #include <engine/imgui.hpp>
+#include <engine/algorithm.hpp>
 
 #include <imgui/imgui.h>
 #include <imgui/imgui_impl_sdl3.h>
@@ -7,9 +8,33 @@
 namespace gol::im
 {
 
-void handle_event(SDL_Event const& ev)
+bool handle_event(SDL_Event const& ev)
 {
     ImGui_ImplSDL3_ProcessEvent(&ev);
+
+    if (rng::contains({
+        SDL_EVENT_KEY_DOWN,
+        SDL_EVENT_KEY_UP,
+        SDL_EVENT_TEXT_EDITING,
+        SDL_EVENT_TEXT_INPUT,
+    }, ev.key.type))
+    {
+        if (ImGui::GetIO().WantCaptureKeyboard)
+            return true;
+    }
+
+    if (rng::contains({
+        SDL_EVENT_MOUSE_MOTION,
+        SDL_EVENT_MOUSE_BUTTON_DOWN,
+        SDL_EVENT_MOUSE_BUTTON_UP,
+        SDL_EVENT_MOUSE_WHEEL,
+    }, ev.key.type))
+    {
+        if (ImGui::GetIO().WantCaptureMouse)
+            return true;
+    }
+
+    return false;
 }
 
 void frame()

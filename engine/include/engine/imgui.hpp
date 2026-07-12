@@ -5,7 +5,8 @@ union SDL_Event;
 namespace gol::im
 {
 
-void handle_event(SDL_Event const&);
+// return true if imgui captured this event
+bool handle_event(SDL_Event const&);
 void frame();
 void render();
 
