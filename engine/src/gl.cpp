@@ -24,27 +24,14 @@ static vao_info make_vao(mesh const& mesh, u32 location)
 {
     vao_info m;
 
-    glGenVertexArrays(1, &m.vao.id);
-    glGenBuffers(1, &m.vbo.id);
+    from_mem(GL_ELEMENT_ARRAY_BUFFER, m.ebo, mesh.indices);
+    from_mem(GL_ARRAY_BUFFER, m.vbo, mesh.vertices);
 
+    glGenVertexArrays(1, &m.vao.id);
     glBindVertexArray(m.vao);
 
-    glGenBuffers(1, &m.ebo.id);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
-    glBufferData(
-        GL_ELEMENT_ARRAY_BUFFER,
-        GLsizeiptr(mesh.indices.size() * sizeof(mesh.indices[0])),
-        mesh.indices.data(),
-        GL_STATIC_DRAW
-    );
-
-    glBindBuffer(GL_ARRAY_BUFFER, m.vbo);
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        GLsizeiptr(mesh.vertices.size() * sizeof(mesh.vertices[0])),
-        mesh.vertices.data(),
-        GL_STATIC_DRAW
-    );
+    bind(m.ebo);
+    bind(m.vbo);
 
     sz offset = 0;
     for (auto [i, attr] : vs::enumerate_with<GLuint>(mesh.attribs))
@@ -113,8 +100,14 @@ static texture make_tex(cubemap const& cm)
 
 }
 
+bool detail::resource::has_value() const
+{
+    return id != 0;
+}
+
 detail::resource::operator GLuint() const
 {
+    assert(has_value());
     return id;
 }
 
@@ -170,6 +163,12 @@ void attach_file(shader & s, stage stage, std::filesystem::path const& path)
 
     attach_source(s, stage, { (char *)data, size });
     SDL_free(data);
+}
+
+
+bool model::has_value() const
+{
+    return vao.has_value();
 }
 
 bool from_file(model & m, u32 location, std::filesystem::path const& path)
@@ -244,6 +243,20 @@ bool from_file(texture & tex, GLenum type, std::filesystem::path const& path)
     return true;
 }
 
+void from_mem(GLenum target, buffer & buf, std::span<byte const> data)
+{
+    glGenBuffers(1, &buf.id);
+    buf.target = target;
+    glBindBuffer(target, buf);
+    glBufferData(
+        target,
+        GLsizeiptr(data.size() * sizeof(byte)),
+        data.data(),
+        GL_STATIC_DRAW // TODO! extract to interface
+    );
+    glBindBuffer(target, 0);
+}
+
 void bind(shader const& m)
 {
     glUseProgram(m);
@@ -252,6 +265,11 @@ void bind(shader const& m)
 void bind(vertex_array const& vao)
 {
     glBindVertexArray(vao);
+}
+
+void bind(buffer const& b)
+{
+    glBindBuffer(b.target, b);
 }
 
 void bind(u32 location, u32 unit, texture const& tex)
@@ -272,6 +290,62 @@ void bind(u32 location, model const& m)
 void bind(u32 location, mat4 const& m)
 {
     glUniformMatrix4fv(GLint(location), 1, GL_FALSE, value_ptr(m));
+}
+
+void bind(u32 location, vec4 const& v)
+{
+    glUniform4f(GLint(location), v.x, v.y, v.z, v.w);
+}
+
+void bind(u32 location, uvec2 const& v)
+{
+    glUniform2ui(GLint(location), v.x, v.y);
+}
+
+void bind(u32 binding, buffer const& b)
+{
+    glBindBufferBase(b.target, binding, b);
+}
+
+void bind(vertex_array & vao, buffer const& b)
+{
+    bind(vao);
+    bind(b);
+    unbind(vao);
+    unbind(b);
+}
+
+void unbind(shader const&)
+{
+    glUseProgram(0);
+}
+
+void unbind(vertex_array const&)
+{
+    glBindVertexArray(0);
+}
+
+void unbind(buffer const& b)
+{
+    glBindBuffer(b.target, 0);
+}
+
+void unbind(u32 unit, texture const& tex)
+{
+    glActiveTexture(GL_TEXTURE0 + GLenum(unit));
+    glBindTexture(tex.type, 0);
+}
+
+void unbind(model const& m)
+{
+    unbind(m.vao);
+    for (auto [i, tex] : vs::enumerate_with<u32>(m.textures))
+        unbind(i, tex);
+}
+
+void unbind(u32 binding, buffer const& b)
+{
+    glBindBufferBase(b.target, binding, 0);
 }
 
 void destroy(shader & s)

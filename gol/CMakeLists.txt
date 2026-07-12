@@ -18,6 +18,7 @@ foreach(target IN LISTS targets)
         PRIVATE
             src/world.cpp
             src/world_json.cpp
+            src/world_scene_node.cpp
 
         PRIVATE
         FILE_SET private_headers
@@ -27,6 +28,7 @@ foreach(target IN LISTS targets)
         FILES
             include/gol/world.hpp
             include/gol/world_json.hpp
+            include/gol/world_scene_node.hpp
     )
     target_link_libraries(${target} PRIVATE engine::engine)
     target_link_libraries(${target} PRIVATE doctest::doctest)

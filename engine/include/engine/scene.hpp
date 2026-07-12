@@ -23,6 +23,10 @@ struct scene_node
 
     mat4 model_mat() const;
 
+    void set_pos(vec3 p);
+    void set_scaling(f32 s);
+
+private:
     vec3 pos{ 0.0f, 0.0f, 0.0f };
     f32 scaling{ 1.0f };
     f32 rotation{ 0.0f };
@@ -33,9 +37,12 @@ struct scene_node
 
 struct model_scene_node : scene_node
 {
-    model_scene_node(gl::model m, gl::shader s);
+    model_scene_node();
+    model_scene_node(std::filesystem::path const& model_path);
 
     void draw(draw_info const & di) const override;
+
+    bool set_model_path(std::filesystem::path const& p);
 
     gl::model model;
     gl::shader shader;
@@ -43,9 +50,13 @@ struct model_scene_node : scene_node
 
 struct skybox_scene_node : scene_node
 {
-    skybox_scene_node(gl::model m, gl::shader s);
+    skybox_scene_node();
+    skybox_scene_node(std::filesystem::path const& model_path);
+    ~skybox_scene_node() override;
 
     void draw(draw_info const& di) const override;
+
+    bool set_model_path(std::filesystem::path const& model_path);
 
     gl::model model;
     gl::shader shader;

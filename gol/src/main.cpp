@@ -16,6 +16,8 @@
 using namespace gol;
 
 #include <gol/world.hpp>
+#include <gol/world_json.hpp>
+#include <gol/world_scene_node.hpp>
 
 #include <SDL3/SDL.h>
 
@@ -32,77 +34,6 @@ using namespace gol;
 #include <cstdlib>
 #include <csignal>
 
-constexpr auto vertex_shader_src = R"(
-#version 320 es
-
-layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 uv;
-layout (location = 2) in vec3 normal;
-
-layout (location = 3) uniform mat4 model;
-layout (location = 4) uniform mat4 view;
-layout (location = 5) uniform mat4 projection;
-
-layout (location = 10) out vec2 out_uv;
-
-void main()
-{
-    vec4 pos = vec4(position, 1.0f);
-    gl_Position = projection * view * model * pos;
-    out_uv = vec2(uv.x, 1.0f - uv.y);
-}
-)";
-
-constexpr auto fragment_shader_src = R"(
-#version 320 es
-precision mediump float;
-
-layout (location = 10) in vec2 uv;
-
-layout (location = 6) uniform sampler2D tex;
-
-out vec4 out_color;
-
-void main()
-{
-    out_color = texture(tex, uv);
-}
-)";
-
-constexpr auto skybox_vertex_shader_src = R"(
-#version 320 es
-precision mediump float;
-
-layout (location = 0) in vec3 pos;
-
-layout (location = 1) uniform mat4 view;
-layout (location = 2) uniform mat4 projection;
-
-layout (location = 10) out vec3 out_uv;
-
-void main()
-{
-    out_uv = pos;
-    gl_Position = (projection * mat4(mat3(view)) * vec4(pos, 1.0)).xyww;
-}
-)";
-
-constexpr auto skybox_fragment_shader_src = R"(
-#version 320 es
-precision mediump float;
-
-layout (location = 10) in vec3 uv;
-
-layout (location = 3) uniform samplerCube cubemap;
-
-out vec4 out_color;
-
-void main()
-{
-    out_color = texture(cubemap, uv);
-}
-)";
-
 int main()
 {
     // register custom SIGINT to allow Ctrl+C immediately close program even if assets loading...
@@ -118,41 +49,13 @@ int main()
     context ctx;
     glEnable(GL_DEPTH_TEST);
 
-    gl::shader model_shader_program{ glCreateProgram() };
-    gl::attach_source(model_shader_program, gl::stage::fragment, fragment_shader_src);
-    gl::attach_source(model_shader_program, gl::stage::vertex, vertex_shader_src);
-    gl::link(model_shader_program);
-    GOL_SCOPE_EXIT { destroy(model_shader_program); };
-
-    constexpr auto model_filepath{ "/home/missed/code/gol/assets/sasuke/sasuke.model" };
-    gl::model sasuke_model;
-    if (!from_file(sasuke_model, 0, model_filepath))
-        throw error{ "[ERROR][ENGINE] can't load model: {}", model_filepath };
-
-    GOL_SCOPE_EXIT { destroy(sasuke_model); };
-
-    gl::shader skybox_shader_program{ glCreateProgram() };
-    gl::attach_source(skybox_shader_program, gl::stage::fragment, skybox_fragment_shader_src);
-    gl::attach_source(skybox_shader_program, gl::stage::vertex, skybox_vertex_shader_src);
-    gl::link(skybox_shader_program);
-    GOL_SCOPE_EXIT { destroy(skybox_shader_program); };
-
-    constexpr auto skybox_filepath{ "/home/missed/code/gol/assets/skybox/skybox.model" };
-    gl::model skybox_model;
-    if (!from_file(skybox_model, 0, skybox_filepath))
-        throw error{ "[ERROR][ENGINE] can't load model: {}", skybox_filepath };
-
     linear_scene scene;
-    // scene.push<model_scene_node>(sasuke_model, model_shader_program);
-    scene.push<skybox_scene_node>(skybox_model, skybox_shader_program);
+    scene.push<skybox_scene_node>("/home/missed/code/gol/assets/skybox/skybox.model");
+    scene.push<world_scene_node>();
+    // scene.push<model_scene_node>("/home/missed/code/gol/assets/sasuke/sasuke.model");
 
     f32 delta_time{ 0 };
     f32 last_ticks{ 0 };
-
-    struct
-    {
-        bool show_demo_window{ false };
-    } imgui_state;
 
     for(;;)
     {
@@ -189,37 +92,6 @@ int main()
                 case SDL_EVENT_WINDOW_RESIZED:
                     glViewport(0, 0, ev.window.data1, ev.window.data2);
                     break;
-
-                case SDL_EVENT_KEY_UP:
-                    switch (ev.key.key)
-                    {
-                        case SDLK_GRAVE:
-                            imgui_state.show_demo_window = !imgui_state.show_demo_window;
-                            break;
-
-                        case SDLK_O:
-                            if (ev.key.mod & SDL_KMOD_CTRL)
-                            {
-                                select_file_dialog(
-                                    [&](auto const& files)
-                                    {
-                                        for (auto const& f : files)
-                                        {
-                                            gl::model model;
-                                            if (!from_file(model, 0, f))
-                                            {
-                                                log::err("[ERROR][ENGINE] can't load model: {}", f);
-                                                continue;
-                                            }
-
-                                            scene.push<model_scene_node>(model, model_shader_program);
-                                        }
-                                    },
-                                    { .many = true }
-                                );
-                            }
-                    }
-                    break;
             }
 
             scene.handle_event(ev);
@@ -238,9 +110,6 @@ int main()
 
         {
             im::frame();
-
-            if (imgui_state.show_demo_window)
-                ImGui::ShowDemoWindow(&imgui_state.show_demo_window);
 
             im::render();
         }

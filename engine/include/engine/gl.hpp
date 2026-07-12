@@ -15,7 +15,11 @@ namespace detail
 
 struct resource
 {
-    GLuint id;
+    // TODO! assume that gl methods always return non-zero id,
+    // so we use 0 here as "invalid" state
+    GLuint id = 0;
+
+    bool has_value() const;
 
     operator GLuint() const;
 };
@@ -34,7 +38,10 @@ void link(shader &);
 void attach_source(shader &, stage, std::string_view source);
 void attach_file(shader &, stage, std::filesystem::path const& path);
 
-struct buffer : detail::resource {};
+struct buffer : detail::resource
+{
+    GLenum target;
+};
 struct texture : detail::resource
 {
     GLenum type;
@@ -48,16 +55,67 @@ struct model
     vertex_array vao;
     std::vector<texture> textures;
     sz indices_count;
+
+    bool has_value() const;
 };
 
 bool from_file(model & m, u32 location, std::filesystem::path const& path);
 bool from_file(texture &, GLenum type, std::filesystem::path const& path);
 
+void from_mem(GLenum target, buffer &, std::span<byte const> data);
+
+template<sz Extent>
+void from_mem(GLenum target, buffer & b, std::span<byte const, Extent> data)
+{
+    return from_mem(target, b, std::span<byte const>{ data });
+}
+
+void from_mem(GLenum target, buffer & b, rng::range auto const& data)
+{
+    return from_mem(target, b, std::as_bytes(std::span{ data }));
+}
+
 void bind(shader const&);
 void bind(vertex_array const&);
+void bind(buffer const&);
 void bind(u32 location, u32 unit, texture const&);
 void bind(u32 location, model const&);
 void bind(u32 location, mat4 const&);
+void bind(u32 location, vec4 const&);
+void bind(u32 location, uvec2 const&);
+void bind(u32 binding, buffer const&);
+void bind(vertex_array & vao, buffer const& b);
+
+void unbind(shader const&);
+void unbind(vertex_array const&);
+void unbind(buffer const&);
+void unbind(u32 binding, buffer const&);
+void unbind(u32 unit, texture const&);
+void unbind(model const&);
+void unbind(buffer const&);
+
+template<typename T>
+struct bind_guard
+{
+    bind_guard(u32 location, T const & r)
+        : resource(r)
+    {
+        bind(location, r);
+    }
+
+    bind_guard(T const & r)
+        : resource(r)
+    {
+        bind(r);
+    }
+
+    ~bind_guard()
+    {
+        unbind(resource);
+    }
+
+    T const& resource;
+};
 
 void destroy(shader &);
 void destroy(model &);
