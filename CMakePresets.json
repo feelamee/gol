@@ -16,7 +16,6 @@
         {
             "name": "debug-config",
             "hidden": true,
-            "binaryDir": "build/Debug",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -25,7 +24,6 @@
         {
             "name": "release-config",
             "hidden": true,
-            "binaryDir": "build/Release/",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
@@ -35,15 +33,28 @@
             "name": "dev",
             "displayName": "preset for development",
             "inherits": [ "debug-config", "ninja" ],
+            "binaryDir": "build/dev/",
             "cacheVariables": {
                 "GOL_DEV": "ON"
             }
         },
 
         {
+            "name": "for-renderdoc",
+            "displayName": "preset for debugging via renderdoc",
+            "inherits": [ "debug-config", "ninja" ],
+            "binaryDir": "build/for-renderdoc/",
+            "cacheVariables": {
+                "GOL_DEV": "ON",
+                "GOL_SANITIZERS": "OFF"
+            }
+        },
+
+        {
             "name": "release",
             "displayName": "preset for release build",
-            "inherits": [ "release-config", "ninja" ]
+            "inherits": [ "release-config", "ninja" ],
+            "binaryDir": "build/release/"
         }
     ],
 
@@ -51,15 +62,19 @@
         {
             "name": "dev",
             "displayName": "preset for development",
-            "configurePreset": "dev",
-            "jobs": 8
+            "configurePreset": "dev"
+        },
+
+        {
+            "name": "for-renderdoc",
+            "displayName": "preset for debugging via renderdoc",
+            "configurePreset": "for-renderdoc"
         },
 
         {
             "name": "release",
             "displayName": "preset for release build",
-            "configurePreset": "release",
-            "jobs": 8
+            "configurePreset": "release"
         }
     ]
 }
