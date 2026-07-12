@@ -9,8 +9,8 @@ include(CPM)
 CPMAddPackage(
   NAME SDL3
   GIT_REPOSITORY "https://github.com/libsdl-org/SDL"
-  GIT_TAG release-3.4.10
-  OPTIONS "SDL_ASAN ${GOL_SANITIZERS}"
+  GIT_TAG release-3.4.12
+  OPTIONS "SDL_ASAN ${GOL_SANITIZERS}" "SDL_CCACHE ${GOL_CCACHE}"
 )
 CPMAddPackage(
   NAME glm
