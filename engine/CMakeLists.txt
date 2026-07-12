@@ -29,6 +29,7 @@ target_sources(
 		include/engine/imgui.hpp
 		include/engine/log.hpp
 		include/engine/scene.hpp
+		include/engine/ticker.hpp
 
     PRIVATE
     FILE_SET private_headers
@@ -48,6 +49,7 @@ target_sources(
         src/imgui.cpp
         src/log.cpp
         src/scene.cpp
+        src/ticker.cpp
 )
 target_compile_features(engine PUBLIC cxx_std_20)
 

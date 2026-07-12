@@ -6,13 +6,13 @@
 #include <engine/ranges.hpp>
 #include <engine/mesh.hpp>
 #include <engine/image.hpp>
-#include <engine/camera.hpp>
 #include <engine/gl.hpp>
 #include <engine/algorithm.hpp>
 #include <engine/imgui.hpp>
 #include <engine/log.hpp>
 #include <engine/log_macro.hpp>
 #include <engine/scene.hpp>
+#include <engine/ticker.hpp>
 using namespace gol;
 
 #include <gol/world.hpp>
@@ -110,6 +110,7 @@ int main(int, char** argv)
     }
 
     linear_scene scene;
+    scene.camera = &scene.push<camera_scene_node>();
     scene.push<skybox_scene_node>("/home/missed/code/gol/assets/skybox/skybox.model");
     auto & world_node = scene.push<world_scene_node>(input.input_world);
 
@@ -132,8 +133,11 @@ int main(int, char** argv)
         }
     };
 
-    f32 delta_time{ 0 };
-    f32 last_ticks{ 0 };
+    ticker render_ticker{ ticker::duration(std::chrono::seconds(1)) / input.input_simulation.fps };
+    ticker simulation_ticker{ std::chrono::milliseconds(10) }; // limit simulation logic update by 10ms for no reason
+
+    render_ticker.frame();
+    simulation_ticker.frame();
 
     for(;;)
     {
@@ -152,7 +156,11 @@ int main(int, char** argv)
             scene.handle_event(ev);
         }
 
-        scene.simulate(delta_time);
+        if (simulation_ticker.frame())
+            scene.simulate(simulation_ticker.delta());
+
+        if (!render_ticker.frame())
+            continue;
 
         int w = 960, h = 540;
         if (!SDL_GetWindowSize(ctx.window, &w, &h))
@@ -171,16 +179,6 @@ int main(int, char** argv)
 
         if (!SDL_GL_SwapWindow(ctx.window))
             sdl::log_error();
-
-        {
-            SDL_Time ticks{};
-            if (!SDL_GetCurrentTime(&ticks))
-                sdl::log_error();
-            f32 fticks = f32(ticks % 360'000'000'000) / 1E8f;
-
-            delta_time = fticks - last_ticks;
-            last_ticks = fticks;
-        }
     }
 
     return EXIT_SUCCESS;

@@ -2,7 +2,8 @@
 
 #include <engine/math.hpp>
 #include <engine/gl.hpp>
-#include <engine/camera.hpp>
+
+#include <chrono>
 
 namespace gol
 {
@@ -12,7 +13,9 @@ struct scene_node
     virtual ~scene_node() = default;
 
     virtual void handle_event(SDL_Event);
-    virtual void simulate(float delta);
+
+    using delta_type = std::chrono::nanoseconds;
+    virtual void simulate(delta_type delta);
 
     struct draw_info
     {
@@ -23,11 +26,12 @@ struct scene_node
 
     mat4 model_mat() const;
 
-    void set_pos(vec3 p);
-    void set_scaling(f32 s);
+    // TODO! this is weird and unusable. Maybe get rid of caching transfrom at all?
+    vec3 get_position() const;
+    void set_position(vec3 p);
 
 private:
-    vec3 pos{ 0.0f, 0.0f, 0.0f };
+    vec3 position{ 0.0f, 0.0f, 0.0f };
     f32 scaling{ 1.0f };
     f32 rotation{ 0.0f };
 
@@ -62,25 +66,60 @@ struct skybox_scene_node : scene_node
     gl::shader shader;
 };
 
-struct linear_scene
+struct camera_scene_node : scene_node
 {
-    void handle_event(SDL_Event const & ev);
-    void simulate(float delta);
+    camera_scene_node();
+    camera_scene_node(vec3 const& pos, vec3 const& dir, vec3 const& up);
 
-    struct draw_info
-    {
-        mat4 projection;
-    };
-    void draw(draw_info const & di) const;
+    void handle_event(SDL_Event ev) override;
+    void simulate(delta_type delta) override;
+
+    mat4 view() const;
+
+private:
+    void update_vectors();
+
+private:
+    vec3 init_position;
+    vec3 init_direction;
+    f32 speed = 5.0f; // per second
+    vec3 world_up{};
+
+    vec3 direction{};
+
+    vec3 right{};
+    vec3 up{};
+
+    bool is_w{ false };
+    bool is_s{ false };
+    bool is_a{ false };
+    bool is_d{ false };
+    bool is_lshift{ false };
+    bool is_mouse_middle_button{ false };
+
+    f32 init_pitch{ 0 };
+    f32 init_yaw{ -90 };
+
+    f32 pitch{ init_pitch };
+    f32 yaw{ init_yaw };
+};
+
+struct linear_scene : scene_node
+{
+    void handle_event(SDL_Event ev) override;
+    void simulate(delta_type delta) override;
+
+    void draw(draw_info const & di) const override;
 
     template<typename T, typename... Args>
-    void push(Args&&... args)
+    T & push(Args&&... args)
     {
         objects.emplace_back(std::make_unique<T>(std::forward<Args>(args)...));
+        return static_cast<T &>(*objects.back());
     }
 
     std::vector<std::unique_ptr<scene_node>> objects;
-    camera cam;
+    camera_scene_node * camera = nullptr;
 };
 
 }

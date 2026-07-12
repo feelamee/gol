@@ -1,5 +1,7 @@
 #include <engine/scene.hpp>
 #include <engine/log.hpp>
+#include <engine/sdl.hpp>
+#include <engine/context.hpp>
 
 namespace gol
 {
@@ -80,11 +82,11 @@ void scene_node::handle_event(SDL_Event)
 {
 }
 
-void scene_node::simulate(float delta)
+void scene_node::simulate(delta_type)
 {
 }
 
-void scene_node::draw(draw_info const & di) const
+void scene_node::draw(draw_info const &) const
 {
 }
 
@@ -94,7 +96,7 @@ mat4 scene_node::model_mat() const
     {
         transform = scale(
             rotate(
-                translate(mat4{ 1.0f }, pos),
+                translate(mat4{ 1.0f }, position),
                 rotation,
                 vec3{ 0.0f, 0.0f, -1.0f }
             ),
@@ -106,16 +108,15 @@ mat4 scene_node::model_mat() const
     return transform;
 }
 
-void scene_node::set_pos(vec3 p)
+vec3 scene_node::get_position() const
 {
-    dirty_transform = true;
-    pos = p;
+    return position;
 }
 
-void scene_node::set_scaling(f32 s)
+void scene_node::set_position(vec3 p)
 {
     dirty_transform = true;
-    scaling = s;
+    position = p;
 }
 
 model_scene_node::model_scene_node()
@@ -176,7 +177,6 @@ skybox_scene_node::skybox_scene_node(std::filesystem::path const& model_path)
     set_model_path(model_path);
 }
 
-
 skybox_scene_node::~skybox_scene_node()
 {
     destroy(shader);
@@ -215,30 +215,160 @@ bool skybox_scene_node::set_model_path(std::filesystem::path const& model_path)
     return true;
 }
 
-void linear_scene::handle_event(SDL_Event const & ev)
+
+camera_scene_node::camera_scene_node()
+    : camera_scene_node({ 0.0f, 0, 0 }, { 0.0f, 0, -1 }, { 0.0f, 1, 0 })
 {
-    cam.handle_event(ev);
+}
+
+camera_scene_node::camera_scene_node(vec3 const& pos, vec3 const& dir, vec3 const& up)
+    : init_position{ pos }
+    , init_direction{ dir }
+    , world_up{ up }
+    , direction{ dir }
+{
+    set_position(pos);
+    update_vectors();
+}
+
+void camera_scene_node::handle_event(SDL_Event ev)
+{
+    SDL_Window * window = gol::ctx().window;
+
+    switch (ev.type)
+    {
+        case SDL_EVENT_KEY_DOWN:
+        {
+            switch (ev.key.key)
+            {
+            case SDLK_W: is_w = is_mouse_middle_button; break;
+            case SDLK_S: is_s = is_mouse_middle_button; break;
+            case SDLK_A: is_a = is_mouse_middle_button; break;
+            case SDLK_D: is_d = is_mouse_middle_button; break;
+            }
+
+            is_lshift = ev.key.mod & SDL_KMOD_LSHIFT;
+        }
+        break;
+
+        case SDL_EVENT_KEY_UP:
+        {
+            switch (ev.key.key)
+            {
+            case SDLK_W: is_w = false; break;
+            case SDLK_S: is_s = false; break;
+            case SDLK_A: is_a = false; break;
+            case SDLK_D: is_d = false; break;
+            case SDLK_EQUALS:
+                set_position(init_position);
+                yaw = init_yaw;
+                pitch = init_pitch;
+                update_vectors();
+                break;
+            }
+
+            is_lshift = ev.key.mod & SDL_KMOD_LSHIFT;
+        }
+        break;
+
+        case SDL_EVENT_MOUSE_MOTION:
+        if (is_mouse_middle_button)
+        {
+            pitch -= ev.motion.yrel * 0.05f;
+            yaw += ev.motion.xrel * 0.05f;
+
+            pitch = std::clamp(pitch, -89.0f, 89.0f);
+
+            update_vectors();
+        }
+        break;
+
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        if (ev.button.button == 2)
+        {
+            if (!SDL_SetWindowRelativeMouseMode(window, true))
+                sdl::log_error();
+
+            SDL_HideCursor();
+
+            int w, h;
+            SDL_GetWindowSize(window, &w, &h);
+            SDL_WarpMouseInWindow(window, f32(w) / 2, f32(h) / 2);
+
+            is_mouse_middle_button = true;
+        }
+        break;
+
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (ev.button.button == 2)
+        {
+            int w, h;
+            SDL_GetWindowSize(window, &w, &h);
+            SDL_WarpMouseInWindow(window, f32(w) / 2, f32(h) / 2);
+
+            if (!SDL_SetWindowRelativeMouseMode(window, false))
+                sdl::log_error();
+
+            SDL_ShowCursor();
+
+            is_mouse_middle_button = false;
+        }
+        break;
+    }
+}
+
+void camera_scene_node::simulate(delta_type delta)
+{
+    f32 const real_speed = speed * (is_lshift ? 5.0f : 1.0f);
+    f32 const distance = real_speed * std::chrono::duration_cast<std::chrono::duration<float>>(delta).count();
+    if (is_w)
+        set_position(get_position() + direction * distance);
+    if (is_s)
+        set_position(get_position() - direction * distance);
+    if (is_a)
+        set_position(get_position() - right * distance);
+    if (is_d)
+        set_position(get_position() + right * distance);
+}
+
+mat4 camera_scene_node::view() const
+{
+    return lookAt(get_position(), get_position() + direction, up);
+}
+
+void camera_scene_node::update_vectors()
+{
+    direction[0] = std::cos(radians(pitch)) * std::cos(radians(yaw));
+    direction[1] = std::sin(radians(pitch));
+    direction[2] = std::cos(radians(pitch)) * std::sin(radians(yaw));
+
+    direction = normalize(direction);
+    right = normalize(cross(direction, world_up));
+    up = normalize(cross(right, direction));
+}
+
+
+void linear_scene::handle_event(SDL_Event ev)
+{
     for (auto & o : objects)
         o->handle_event(ev);
 }
 
-void linear_scene::simulate(float delta)
+void linear_scene::simulate(delta_type delta)
 {
-    cam.simulate(delta);
     for (auto & o : objects)
         o->simulate(delta);
 }
 
 void linear_scene::draw(draw_info const & di) const
 {
-    scene_node::draw_info obj_di{
-        .view = cam.view(),
-        .projection = di.projection,
-    };
+    // TODO! maybe better pass by mutable ref? or by value
+    auto di2 = di;
+    if (camera)
+        di2.view = camera->view();
 
-    // cam.draw(obj_di);
     for (auto const & o : objects)
-        o->draw(obj_di);
+        o->draw(di2);
 }
 
 }

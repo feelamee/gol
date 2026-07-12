@@ -14,7 +14,7 @@ struct world_scene_node : scene_node
     ~world_scene_node() override;
 
     void handle_event(SDL_Event) override;
-    void simulate(float delta) override;
+    void simulate(delta_type delta) override;
     void draw(draw_info const & di) const override;
 
     world gol_world; /// TODO! pimpl? to not include world.hpp

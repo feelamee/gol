@@ -113,7 +113,7 @@ void world_scene_node::handle_event(SDL_Event)
 {
 }
 
-void world_scene_node::simulate(float delta)
+void world_scene_node::simulate(delta_type)
 {
 }
 
