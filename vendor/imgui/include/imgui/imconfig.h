@@ -17,8 +17,14 @@
 //---- Define assertion handler. Defaults to calling assert().
 // - If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
 // - Compiling with NDEBUG will usually strip out assert() to nothing, which is NOT recommended because we use asserts to notify of programmer mistakes.
+//
+// SDL_assert will fail build in release mode,
+// because ImGui apply it to bit-field.
+// See: https://github.com/libsdl-org/SDL/issues/15990
+#ifndef NDEBUG
 #include <SDL3/SDL_assert.h>
-#define IM_ASSERT(_EXPR)  SDL_assert(_EXPR)
+#define IM_ASSERT(_EXPR) SDL_assert(_EXPR)
+#endif
 //#define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
 
 //---- Define attributes of all API symbols declarations, e.g. for DLL under Windows
