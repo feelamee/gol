@@ -44,3 +44,16 @@ if (GOL_TESTS)
     set_source_files_properties(src/main.test.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 endif()
 
+
+install(
+    TARGETS gol-simulation
+    RUNTIME DESTINATION bin
+)
+
+# TODO! add option GOL_INSTALL_TESTS?
+if (GOL_TESTS)
+    install(
+        TARGETS gol-simulation-test
+        RUNTIME DESTINATION bin
+    )
+endif()

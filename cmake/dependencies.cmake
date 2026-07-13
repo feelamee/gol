@@ -1,6 +1,6 @@
 include_guard()
 
-if (${GOL_USE_SYSTEM_LIBRARIES})
+if (GOL_USE_SYSTEM_LIBRARIES)
     set(CPM_USE_LOCAL_PACKAGES ON)
     set(CPM_LOCAL_PACKAGES_ONLY ON)
 endif()
@@ -19,3 +19,31 @@ CPMAddPackage(
   OPTIONS "GLM_ENABLE_CXX_20 ON"
 )
 
+
+if (NOT GOL_USE_SYSTEM_LIBRARIES)
+    if (TARGET SDL3-shared)
+        install(
+            TARGETS SDL3-shared
+            EXPORT SDL3Targets
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION bin
+        )
+    elseif(TARGET SDL3-static)
+        install(
+            TARGETS SDL3-shared
+            EXPORT SDL3Targets
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION bin
+        )
+    endif()
+
+    install(
+        TARGETS glm
+        EXPORT glmTargets
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+    )
+endif()

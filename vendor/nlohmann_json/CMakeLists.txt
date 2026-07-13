@@ -10,6 +10,6 @@ target_sources(
     TYPE HEADERS
     BASE_DIRS ./
     FILES
-        nlohmann_json.h
+        nlohmann_json.hpp
 )
 target_precompile_headers(nlohmann_json INTERFACE <nlohmann_json.hpp>)

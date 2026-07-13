@@ -105,3 +105,13 @@ target_precompile_headers(
         <engine/math.hpp>
         <engine/ranges.hpp>
 )
+
+
+install(
+    TARGETS engine
+    EXPORT engineTargets
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    FILE_SET public_headers DESTINATION include/
+)
