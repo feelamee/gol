@@ -159,7 +159,7 @@ void attach_source(shader & s, stage stage, std::string_view source)
 void attach_file(shader & s, stage stage, std::filesystem::path const& path)
 {
     sz size;
-    void * data{ SDL_LoadFile(path.c_str(), &size) };
+    void * data{ SDL_LoadFile(path.string().c_str(), &size) };
     if (!data)
     {
         sdl::log_error();

@@ -238,7 +238,7 @@ try
     if (ext == ".obj")
         return obj::load(m, in);
 
-    log::err("can't load mesh: unsupported format {}\n", ext.c_str());
+    log::err("can't load mesh: unsupported format {}\n", ext.string().c_str());
     return false;
 }
 catch (std::ifstream::failure const& f)

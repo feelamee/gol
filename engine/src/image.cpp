@@ -70,12 +70,12 @@ try
     if (ext == ".ppm")
         return ppm::load(img, in);
 
-    log::err("can't load image {}: unsupported format {}\n", path.c_str(), ext.c_str());
+    log::err("can't load image {}: unsupported format {}\n", path.string().c_str(), ext.string().c_str());
     return false;
 }
 catch (std::ifstream::failure const& e)
 {
-    log::err("can't load image {}: {}", path.c_str(), e.what());
+    log::err("can't load image {}: {}", path.string().c_str(), e.what());
     return false;
 }
 
@@ -103,7 +103,7 @@ bool from_file(cubemap & c, std::filesystem::path const& path)
 
     if (!std::filesystem::is_directory(path))
     {
-        log::err("can't load cubemap {}: expected directory", path.c_str());
+        log::err("can't load cubemap {}: expected directory", path.string().c_str());
         return false;
     }
 
@@ -118,7 +118,7 @@ bool from_file(cubemap & c, std::filesystem::path const& path)
     };
     for (auto const& entry : std::filesystem::directory_iterator{ path })
     {
-        auto it = faces.find(entry.path().stem().c_str());
+        auto it = faces.find(entry.path().stem().string().c_str());
         if (it != end(faces))
         {
             if (!from_file(c.data[it->second], entry.path()))
