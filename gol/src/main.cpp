@@ -71,23 +71,8 @@ void from_json(nlohmann::json const& j, input_data & r)
     j.at("world").get_to(r.input_world);
 }
 
-int main(int, char** argv)
+input_data load_input(std::filesystem::path const & input_path)
 {
-    // register custom SIGINT to allow Ctrl+C immediately close program even if assets loading...
-    std::signal(
-        SIGINT,
-        [](int)
-        {
-            log::err("SIGINT is called\n");
-            std::quick_exit(EXIT_FAILURE);
-        }
-    );
-
-    context ctx;
-    glEnable(GL_DEPTH_TEST);
-
-    auto const cwd = std::filesystem::path(argv[0]).parent_path();
-    auto const input_path = cwd / "game_of_life_input.json";
     input_data input;
     try
     {
@@ -106,6 +91,58 @@ int main(int, char** argv)
             input_path.string(), e.what()
         );
     }
+    return input;
+}
+
+void dump_output(std::filesystem::path const & output_path, world const & w)
+{
+    nlohmann::json j;
+    try
+    {
+        to_json(j["result"], w);
+        std::ofstream out{ output_path };
+        out << j.dump(/*indent*/4);
+    }
+    catch (std::exception const& e)
+    {
+        log::err(
+            "Something bad happens...:"
+            "\n    what(): {}",
+            e.what()
+        );
+    }
+}
+
+int headless(
+    std::filesystem::path const & input_path,
+    std::filesystem::path const & output_path
+)
+{
+    input_data input = load_input(input_path);
+    input.input_world.iterate(input.input_simulation.cycles);
+    dump_output(output_path, input.input_world);
+    return EXIT_SUCCESS;
+}
+
+int headgreater(
+    std::filesystem::path const & input_path,
+    std::filesystem::path const & output_path
+)
+{
+    // register custom SIGINT to allow Ctrl+C immediately close program even if assets loading...
+    std::signal(
+        SIGINT,
+        [](int)
+        {
+            log::err("SIGINT is called\n");
+            std::quick_exit(EXIT_FAILURE);
+        }
+    );
+
+    context ctx;
+    glEnable(GL_DEPTH_TEST);
+
+    input_data const input = load_input(input_path);
 
     linear_scene scene;
     scene.camera = &scene.push<camera_scene_node>();
@@ -115,21 +152,7 @@ int main(int, char** argv)
 
     GOL_SCOPE_EXIT
     {
-        nlohmann::json j;
-        try
-        {
-            to_json(j["result"], world_node.gol_world);
-            std::ofstream out{ cwd / "game_of_life_output.json" };
-            out << j.dump(/*indent*/4);
-        }
-        catch (std::exception const& e)
-        {
-            log::err(
-                "Something bad happens...:"
-                "\n    what(): {}",
-                e.what()
-            );
-        }
+        dump_output(output_path, world_node.gol_world);
     };
 
     ticker render_ticker{ ticker::duration(std::chrono::seconds(1)) / input.input_simulation.fps };
@@ -181,4 +204,16 @@ int main(int, char** argv)
     }
 
     return EXIT_SUCCESS;
+}
+
+int main(int argc, char** argv)
+{
+    auto const cwd = std::filesystem::path(argv[0]).parent_path();
+    auto const input_path = cwd / "game_of_life_input.json";
+    auto const output_path = cwd / "game_of_life_output.json";
+
+    if (argc == 2 && argv[1] == std::string_view{ "--headless" })
+        return headless(input_path, output_path);
+    else
+        return headgreater(input_path, output_path);
 }
