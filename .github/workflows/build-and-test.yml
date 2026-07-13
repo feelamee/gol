@@ -1,0 +1,41 @@
+name: build and test
+
+on:
+  push:
+    branches: [ 'master' ]
+  pull_request:
+    branches: [ 'master' ]
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            cmake_flags: -DSDL_UNIX_CONSOLE_BUILD=ON
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: configure cmake
+      run: cmake --preset release ${{ matrix.cmake_flags }} -DGOL_TESTS=ON
+
+    - name: build
+      run: cmake --build --preset release
+
+    - name: install
+      run: cmake --install build/release --prefix install/
+
+    - name: test on windows
+      if: matrix.os == 'windows-latest'
+      run: "${{ github.workspace }}/install/bin/gol-simulation-test"
+
+    - name: test on linux and macos
+      if: matrix.os != 'windows-latest'
+      run: "${{ github.workspace }}/install/bin/gol-simulation-test"
+      env:
+        LD_LIBRARY_PATH: "${{ github.workspace }}/install/lib"
