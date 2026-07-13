@@ -80,7 +80,8 @@ world_scene_node::world_scene_node()
 }
 
 world_scene_node::world_scene_node(world w)
-    : gol_world(std::move(w))
+    : gol_world{ std::move(w) }
+    , iteration_ticker{ std::chrono::seconds(3) }
 {
     gl::from_mem(GL_SHADER_STORAGE_BUFFER, gpu_world, gol_world.data);
 
@@ -113,14 +114,31 @@ void world_scene_node::do_handle_event(SDL_Event)
 {
 }
 
-void world_scene_node::do_simulate(delta_type)
+void world_scene_node::do_simulate(delta_type delta)
 {
+    if (!iteration_ticker.frame(delta))
+        return;
+
+    if (least_iterations == 0)
+        return;
+
+    gol_world.iterate();
+    gol_world_changed = true;
+    --least_iterations;
 }
 
 void world_scene_node::do_draw(draw_info const & di) const
 {
     if (gol_world.empty())
         return;
+
+    if (gol_world_changed)
+    {
+        // TODO! terrible, optimize
+        gl::from_mem(GL_SHADER_STORAGE_BUFFER, gpu_world, gol_world.data);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        gol_world_changed = false;
+    }
 
     using gl::bind, gl::bind_guard;
 

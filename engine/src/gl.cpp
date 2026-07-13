@@ -245,8 +245,13 @@ bool from_file(texture & tex, GLenum type, std::filesystem::path const& path)
 
 void from_mem(GLenum target, buffer & buf, std::span<byte const> data)
 {
-    glGenBuffers(1, &buf.id);
-    buf.target = target;
+    if (!buf.has_value() || buf.target != target)
+    {
+        destroy(buf);
+        glGenBuffers(1, &buf.id);
+        buf.target = target;
+    }
+
     glBindBuffer(target, buf);
     glBufferData(
         target,

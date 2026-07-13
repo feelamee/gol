@@ -50,9 +50,7 @@ struct input_data
     struct simulation
     {
         u32 fps = 60;
-
-        constexpr inline static u32 infinite_cycles = u32(-1);
-        u32 cycles = infinite_cycles;
+        u32 cycles = world_scene_node::infinite_iterations;
     } input_simulation;
 };
 
@@ -113,6 +111,7 @@ int main(int, char** argv)
     scene.camera = &scene.push<camera_scene_node>();
     scene.push<skybox_scene_node>("/home/missed/code/gol/assets/skybox/skybox.model");
     auto & world_node = scene.push<world_scene_node>(input.input_world);
+    world_node.least_iterations = input.input_simulation.cycles;
 
     GOL_SCOPE_EXIT
     {
