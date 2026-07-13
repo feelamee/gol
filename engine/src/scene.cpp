@@ -78,15 +78,33 @@ void main()
 )";
 
 
-void scene_node::handle_event(SDL_Event)
+void scene_node::handle_event(SDL_Event ev)
+{
+    if (enabled())
+        do_handle_event(ev);
+}
+
+void scene_node::simulate(delta_type delta)
+{
+    if (enabled())
+        do_simulate(delta);
+}
+
+void scene_node::draw(draw_info const & di) const
+{
+    if (visible())
+        return do_draw(di);
+}
+
+void scene_node::do_handle_event(SDL_Event)
 {
 }
 
-void scene_node::simulate(delta_type)
+void scene_node::do_simulate(delta_type)
 {
 }
 
-void scene_node::draw(draw_info const &) const
+void scene_node::do_draw(draw_info const &) const
 {
 }
 
@@ -119,6 +137,26 @@ void scene_node::set_position(vec3 p)
     position = p;
 }
 
+void scene_node::enable(bool e)
+{
+    is_enabled = e;
+}
+
+bool scene_node::enabled() const
+{
+    return is_enabled;
+}
+
+void scene_node::visible(bool v)
+{
+    is_visible = v;
+}
+
+bool scene_node::visible() const
+{
+    return is_visible;
+}
+
 model_scene_node::model_scene_node()
 {
     shader.id = glCreateProgram();
@@ -133,7 +171,7 @@ model_scene_node::model_scene_node(std::filesystem::path const& model_path)
     set_model_path(model_path);
 }
 
-void model_scene_node::draw(draw_info const & di) const
+void model_scene_node::do_draw(draw_info const & di) const
 {
     if (!model.has_value())
         return;
@@ -183,7 +221,7 @@ skybox_scene_node::~skybox_scene_node()
     destroy(model);
 }
 
-void skybox_scene_node::draw(draw_info const& di) const
+void skybox_scene_node::do_draw(draw_info const& di) const
 {
     if (!model.has_value())
         return; // TODO! maybe add fallback model to draw it whenever actual model not available?
@@ -231,7 +269,7 @@ camera_scene_node::camera_scene_node(vec3 const& pos, vec3 const& dir, vec3 cons
     update_vectors();
 }
 
-void camera_scene_node::handle_event(SDL_Event ev)
+void camera_scene_node::do_handle_event(SDL_Event ev)
 {
     SDL_Window * window = gol::ctx().window;
 
@@ -317,7 +355,7 @@ void camera_scene_node::handle_event(SDL_Event ev)
     }
 }
 
-void camera_scene_node::simulate(delta_type delta)
+void camera_scene_node::do_simulate(delta_type delta)
 {
     f32 const real_speed = speed * (is_lshift ? 5.0f : 1.0f);
     f32 const distance = real_speed * std::chrono::duration_cast<std::chrono::duration<float>>(delta).count();
@@ -348,19 +386,19 @@ void camera_scene_node::update_vectors()
 }
 
 
-void linear_scene::handle_event(SDL_Event ev)
+void linear_scene::do_handle_event(SDL_Event ev)
 {
     for (auto & o : objects)
         o->handle_event(ev);
 }
 
-void linear_scene::simulate(delta_type delta)
+void linear_scene::do_simulate(delta_type delta)
 {
     for (auto & o : objects)
         o->simulate(delta);
 }
 
-void linear_scene::draw(draw_info const & di) const
+void linear_scene::do_draw(draw_info const & di) const
 {
     // TODO! maybe better pass by mutable ref? or by value
     auto di2 = di;

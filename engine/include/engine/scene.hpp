@@ -12,23 +12,38 @@ struct scene_node
 {
     virtual ~scene_node() = default;
 
-    virtual void handle_event(SDL_Event);
+    void handle_event(SDL_Event);
 
     using delta_type = std::chrono::nanoseconds;
-    virtual void simulate(delta_type delta);
+    void simulate(delta_type delta);
 
     struct draw_info
     {
         mat4 view;
         mat4 projection;
     };
-    virtual void draw(draw_info const & di) const;
+    void draw(draw_info const & di) const;
+
 
     mat4 model_mat() const;
 
     // TODO! this is weird and unusable. Maybe get rid of caching transfrom at all?
     vec3 get_position() const;
     void set_position(vec3 p);
+
+
+    // enable/disable handle_event and simulate
+    void enable(bool e);
+    bool enabled() const;
+
+    // enable/disable draw
+    void visible(bool v);
+    bool visible() const;
+
+private: // TODO! maybe protected?
+    virtual void do_handle_event(SDL_Event);
+    virtual void do_simulate(delta_type delta);
+    virtual void do_draw(draw_info const & di) const;
 
 private:
     vec3 position{ 0.0f, 0.0f, 0.0f };
@@ -37,6 +52,10 @@ private:
 
     mutable mat4 transform; //< cached model_mat
     mutable bool dirty_transform = true;
+
+    // TODO! replace with bitflags?
+    bool is_enabled = true;
+    bool is_visible = true;
 };
 
 struct model_scene_node : scene_node
@@ -44,12 +63,13 @@ struct model_scene_node : scene_node
     model_scene_node();
     model_scene_node(std::filesystem::path const& model_path);
 
-    void draw(draw_info const & di) const override;
-
     bool set_model_path(std::filesystem::path const& p);
 
     gl::model model;
     gl::shader shader;
+
+private:
+    void do_draw(draw_info const & di) const override;
 };
 
 struct skybox_scene_node : scene_node
@@ -58,12 +78,13 @@ struct skybox_scene_node : scene_node
     skybox_scene_node(std::filesystem::path const& model_path);
     ~skybox_scene_node() override;
 
-    void draw(draw_info const& di) const override;
-
     bool set_model_path(std::filesystem::path const& model_path);
 
     gl::model model;
     gl::shader shader;
+
+private:
+    void do_draw(draw_info const& di) const override;
 };
 
 struct camera_scene_node : scene_node
@@ -71,10 +92,11 @@ struct camera_scene_node : scene_node
     camera_scene_node();
     camera_scene_node(vec3 const& pos, vec3 const& dir, vec3 const& up);
 
-    void handle_event(SDL_Event ev) override;
-    void simulate(delta_type delta) override;
-
     mat4 view() const;
+
+private:
+    void do_handle_event(SDL_Event ev) override;
+    void do_simulate(delta_type delta) override;
 
 private:
     void update_vectors();
@@ -106,11 +128,6 @@ private:
 
 struct linear_scene : scene_node
 {
-    void handle_event(SDL_Event ev) override;
-    void simulate(delta_type delta) override;
-
-    void draw(draw_info const & di) const override;
-
     template<typename T, typename... Args>
     T & push(Args&&... args)
     {
@@ -120,6 +137,11 @@ struct linear_scene : scene_node
 
     std::vector<std::unique_ptr<scene_node>> objects;
     camera_scene_node * camera = nullptr;
+
+private:
+    void do_handle_event(SDL_Event ev) override;
+    void do_simulate(delta_type delta) override;
+    void do_draw(draw_info const & di) const override;
 };
 
 }

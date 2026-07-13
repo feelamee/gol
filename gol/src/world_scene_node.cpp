@@ -109,15 +109,15 @@ world_scene_node::~world_scene_node()
     destroy(shader);
 }
 
-void world_scene_node::handle_event(SDL_Event)
+void world_scene_node::do_handle_event(SDL_Event)
 {
 }
 
-void world_scene_node::simulate(delta_type)
+void world_scene_node::do_simulate(delta_type)
 {
 }
 
-void world_scene_node::draw(draw_info const & di) const
+void world_scene_node::do_draw(draw_info const & di) const
 {
     if (gol_world.empty())
         return;
