@@ -62,17 +62,33 @@ struct model
 bool from_file(model & m, u32 location, std::filesystem::path const& path);
 bool from_file(texture &, GLenum type, std::filesystem::path const& path);
 
-void from_mem(GLenum target, buffer &, std::span<byte const> data);
+// TODO! split allocating buffer and uploading data to it
+void from_mem(
+    buffer &,
+    GLenum usage,
+    std::span<byte const> data,
+    sz padding_size = 0 ///< allocate padding_size bytes more
+);
 
 template<sz Extent>
-void from_mem(GLenum target, buffer & b, std::span<byte const, Extent> data)
+void from_mem(
+    buffer & b,
+    GLenum usage,
+    std::span<byte const, Extent> data,
+    sz padding_size = 0 ///< allocate padding_size bytes more
+)
 {
-    return from_mem(target, b, std::span<byte const>{ data });
+    return from_mem(b, usage, std::span<byte const>{ data }, padding_size);
 }
 
-void from_mem(GLenum target, buffer & b, rng::range auto const& data)
+void from_mem(
+    buffer & b,
+    GLenum usage,
+    rng::range auto const& data,
+    sz padding_size = 0 ///< allocate padding_size bytes more
+)
 {
-    return from_mem(target, b, std::as_bytes(std::span{ data }));
+    return from_mem(b, usage, std::as_bytes(std::span{ data }), padding_size);
 }
 
 void bind(shader const&);

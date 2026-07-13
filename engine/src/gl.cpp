@@ -24,8 +24,13 @@ static vao_info make_vao(mesh const& mesh, u32 location)
 {
     vao_info m;
 
-    from_mem(GL_ELEMENT_ARRAY_BUFFER, m.ebo, mesh.indices);
-    from_mem(GL_ARRAY_BUFFER, m.vbo, mesh.vertices);
+    glGenBuffers(1, &m.ebo.id);
+    m.ebo.target = GL_ELEMENT_ARRAY_BUFFER;
+    from_mem(m.ebo, GL_STATIC_DRAW, mesh.indices);
+
+    glGenBuffers(1, &m.vbo.id);
+    m.vbo.target = GL_ARRAY_BUFFER;
+    from_mem(m.vbo, GL_STATIC_DRAW, mesh.vertices);
 
     glGenVertexArrays(1, &m.vao.id);
     glBindVertexArray(m.vao);
@@ -243,23 +248,26 @@ bool from_file(texture & tex, GLenum type, std::filesystem::path const& path)
     return true;
 }
 
-void from_mem(GLenum target, buffer & buf, std::span<byte const> data)
+void from_mem(
+    buffer & buf,
+    GLenum usage,
+    std::span<byte const> data,
+    sz padding_size
+)
 {
-    if (!buf.has_value() || buf.target != target)
-    {
-        destroy(buf);
-        glGenBuffers(1, &buf.id);
-        buf.target = target;
-    }
-
-    glBindBuffer(target, buf);
+    bind_guard g(buf);
     glBufferData(
-        target,
-        GLsizeiptr(data.size() * sizeof(byte)),
-        data.data(),
-        GL_STATIC_DRAW // TODO! extract to interface
+        buf.target,
+        GLsizeiptr(data.size() * sizeof(byte) + padding_size),
+        nullptr,
+        usage
     );
-    glBindBuffer(target, 0);
+    glBufferSubData(
+        buf.target,
+        0,
+        GLsizeiptr(data.size() * sizeof(byte)),
+        data.data()
+    );
 }
 
 void bind(shader const& m)

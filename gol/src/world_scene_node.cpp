@@ -83,7 +83,10 @@ world_scene_node::world_scene_node(world w)
     : gol_world{ std::move(w) }
     , iteration_ticker{ std::chrono::seconds(3) }
 {
-    gl::from_mem(GL_SHADER_STORAGE_BUFFER, gpu_world, gol_world.data);
+    glGenBuffers(1, &gpu_world.id);
+    gpu_world.target = GL_SHADER_STORAGE_BUFFER;
+
+    update_gpu_world();
 
     constexpr std::array<GLuint, 36> cube_indices = {
         0, 1, 2,  2, 3, 0, // front
@@ -93,7 +96,9 @@ world_scene_node::world_scene_node(world w)
         3, 2, 6,  6, 7, 3, // up
         0, 1, 5,  5, 4, 0  // bottom
     };
-    gl::from_mem(GL_ELEMENT_ARRAY_BUFFER, ebo, cube_indices);
+    glGenBuffers(1, &ebo.id);
+    ebo.target = GL_ELEMENT_ARRAY_BUFFER;
+    gl::from_mem(ebo, GL_STATIC_DRAW, cube_indices);
 
     glGenVertexArrays(1, &vao.id);
     bind(vao, ebo);
@@ -134,8 +139,7 @@ void world_scene_node::do_draw(draw_info const & di) const
 
     if (gol_world_changed)
     {
-        // TODO! terrible, optimize
-        gl::from_mem(GL_SHADER_STORAGE_BUFFER, gpu_world, gol_world.data);
+        update_gpu_world();
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         gol_world_changed = false;
     }
@@ -154,6 +158,17 @@ void world_scene_node::do_draw(draw_info const & di) const
     bind(5, di.projection);
 
     glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr, GLsizei(gol_world.data.size()));
+}
+
+void world_scene_node::update_gpu_world() const
+{
+    // TODO! terrible, optimize
+    gl::from_mem(
+        gpu_world,
+        GL_DYNAMIC_DRAW,
+        gol_world.data,
+        4 - gol_world.data.size() % 4
+    );
 }
 
 }

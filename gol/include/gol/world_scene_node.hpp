@@ -31,6 +31,8 @@ private:
     void do_handle_event(SDL_Event) override;
     void do_simulate(delta_type delta) override;
     void do_draw(draw_info const & di) const override;
+
+    void update_gpu_world() const;
 };
 
 }
