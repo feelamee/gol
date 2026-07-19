@@ -177,7 +177,7 @@ This architecture makes the engine reusable for other projects and keeps the gam
 
 ### Limitations and Simplifications
 
-- The simulation implementation is intentionally naive and not optimized - have lot of copying.
+- The simulation implementation is intentionally naive and not optimized
 - The simulation uses a fixed grid size defined at load time.
 - The simulation is **CPU‑side** (no GPU compute shaders), which is fine for moderate grid sizes but may not scale to millions of cells.
 - The engine’s OpenGL wrapper is lightweight and does not support advanced features like instanced rendering or shader hot‑reloading. It is still in progress library.
