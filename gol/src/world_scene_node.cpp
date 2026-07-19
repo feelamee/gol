@@ -29,13 +29,6 @@ const vec3 cube_positions[8] = vec3[8](
     vec3(-0.5, 0.5,-0.5)
 );
 
-const uint mask[4] = uint[4](
-    uint(0x000000FF),
-    uint(0x0000FF00),
-    uint(0x00FF0000),
-    uint(0xFF000000)
-);
-
 const float cube_size = 1.0f;
 const float cubes_margin = 0.5f;
 
@@ -52,7 +45,7 @@ void main()
     pos.z += (row - (float(row_count)    - 1.0f) / 2.0f) * (cube_size + cubes_margin);
     gl_Position = projection * view * model * pos;
 
-    uint is_alive = world_data[gl_InstanceID / 4] & mask[gl_InstanceID % 4];
+    uint is_alive = world_data[gl_InstanceID / 32] & (uint(1) << (gl_InstanceID % 32));
     out_color = is_alive != 0u ? alive_color : dead_color;
 }
 )";
@@ -157,7 +150,11 @@ void world_scene_node::do_draw(draw_info const & di) const
     bind(4, di.view);
     bind(5, di.projection);
 
-    glDrawElementsInstanced(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr, GLsizei(gol_world.data.size()));
+    glDrawElementsInstanced(
+        GL_TRIANGLES,
+        36, GL_UNSIGNED_INT, nullptr,
+        GLsizei(gol_world.row_count * gol_world.column_count)
+    );
 }
 
 void world_scene_node::update_gpu_world() const

@@ -25,6 +25,33 @@ coord coord::right()
     return { row, col + 1 };
 }
 
+packed_cells::packed_cells()
+    : packed_cells(cell::dead)
+{
+}
+
+packed_cells::packed_cells(cell c)
+{
+    set(c);
+}
+
+cell packed_cells::get(sz i) const
+{
+    assert(i < size);
+    return cell(bool(data & (storage_type(1) << i)));
+}
+
+void packed_cells::set(sz i, cell c)
+{
+    assert(i < size);
+    data &= storage_type(~storage_type(storage_type(1) << i));
+    data |=               storage_type(storage_type(c) << i);
+}
+
+void packed_cells::set(cell c)
+{
+    data = storage_type(c == cell::alive ? -1 : 0);
+}
 
 world::world(
     i32 row_count, i32 column_count,
@@ -34,8 +61,7 @@ world::world(
     , column_count(column_count)
 {
     check_invariants(row_count, column_count);
-    data.assign(sz(row_count * column_count), c);
-    prev_data.resize(data.size());
+    resize(row_count, column_count, c);
 }
 
 world::world(
@@ -46,49 +72,54 @@ world::world(
     , column_count(column_count)
 {
     check_invariants(row_count, column_count, i32(d.size()));
-    data.assign(begin(d), end(d));
+    assign_to_storage(d, data);
     prev_data.resize(data.size());
 }
 
-cell & world::get(coord c)
+cell world::get(coord c) const
 {
     return get(data, c);
 }
 
-cell const& world::get(coord c) const
-{
-    return get(data, c);
-}
-
-cell & world::get(i32 row, i32 col)
+cell world::get(i32 row, i32 col) const
 {
     return get(data, row, col);
 }
 
-cell const& world::get(i32 row, i32 col) const
+void world::set(coord c, cell v)
 {
-    return get(data, row, col);
+    set(data, c, v);
 }
 
-
-cell & world::get(storage_type & s, coord c) const
+void world::set(i32 row, i32 col, cell v)
 {
-    return s[to_index(c)];
+    set(data, row, col, v);
 }
 
-cell const& world::get(storage_type const & s, coord c) const
+cell world::get(storage_type const & s, coord c) const
 {
-    return s[to_index(c)];
+    sz const i = to_index(c);
+    sz const j = i / storage_type::value_type::size;
+    sz const k = i % storage_type::value_type::size;
+    return s[j].get(k);
 }
 
-cell & world::get(storage_type & s, i32 row, i32 col) const
+cell world::get(storage_type const & s, i32 row, i32 col) const
 {
     return get(s, { row, col });
 }
 
-cell const& world::get(storage_type const & s, i32 row, i32 col) const
+void world::set(storage_type & s, coord c, cell v) const
 {
-    return get(s, { row, col });
+    sz const i = to_index(c);
+    sz const j = i / storage_type::value_type::size;
+    sz const k = i % storage_type::value_type::size;
+    s[j].set(k, v);
+}
+
+void world::set(storage_type & s, i32 row, i32 col, cell v) const
+{
+    set(s, { row, col }, v);
 }
 
 std::optional<cell> world::try_get(coord c) const
@@ -149,19 +180,24 @@ void world::iterate(u32 steps)
             return count;
         };
 
-        for (auto [i, cell] : vs::enumerate(data))
+        for (auto [i, cells] : vs::enumerate(data))
         {
-            i32 const count = alive_neighbors_count(to_coord(i));
-
-            cell = get(prev_data, to_coord(i));
-
-            if (cell == cell::alive)
+            // TODO! add iterators support to packed_cells?
+            for (sz j = 0; j < storage_type::value_type::size; ++j)
             {
-                if (count != 2 && count != 3) cell = cell::dead;
-            }
-            else if (cell == cell::dead)
-            {
-                if (count == 3) cell = cell::alive;
+                coord const coord = to_coord(i * storage_type::value_type::size + j);
+                i32 const count = alive_neighbors_count(coord);
+                cells.set(j, get(prev_data, coord));
+
+                auto const cell = cells.get(j);
+                if (cell == cell::alive)
+                {
+                    if (count != 2 && count != 3) cells.set(j, cell::dead);
+                }
+                else if (cell == cell::dead)
+                {
+                    if (count == 3) cells.set(j, cell::alive);
+                }
             }
         }
     }
@@ -179,18 +215,33 @@ bool world::empty() const
     return row_count == 0 && column_count == 0 && data.empty();
 }
 
-void world::resize(i32 row_count, i32 column_count)
+void world::resize(i32 row_count, i32 column_count, cell c)
 {
     check_invariants(row_count, column_count);
+
     this->row_count = row_count;
     this->column_count = column_count;
-    data.resize(sz(row_count * column_count));
+
+    auto const size = sz(row_count * column_count);
+    if (size == 0)
+    {
+        data.resize(0, c);
+        prev_data.resize(0, c);
+    }
+    else
+    {
+        sz const s = (size - 1) / storage_type::value_type::size + 1;
+        data.resize(s, c);
+        prev_data.resize(s, c);
+    }
 }
 
 bool world::operator==(world const& o) const
 {
     return row_count == o.row_count
         && column_count == o.column_count
+        // TODO! this is incorrect, data may have unused bits in packed_cell,
+        // which should not participate in comprasion
         && data == o.data
         ;
 }
@@ -235,8 +286,7 @@ TEST_CASE("world::ctors")
     w = world{ 3, 4 };
     REQUIRE(w.row_count == 3);
     REQUIRE(w.column_count == 4);
-    REQUIRE(w.data.size() == 12);
-    REQUIRE(rng::all_of(w.data, [](cell c){ return c == cell::dead; }));
+    REQUIRE(rng::all_of(w.data, [](packed_cells c){ return c == packed_cells{ cell::dead }; }));
 
     CHECK_THROWS_AS(world(3, 4, { cell::dead }), world::error);
     CHECK_THROWS_AS(world(-3, 4), world::error);

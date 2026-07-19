@@ -49,8 +49,8 @@ void from_json(nlohmann::json const & j, world & w)
         {
             switch (cell)
             {
-                case '*': w.get(r, c) = cell::alive; break;
-                case '.': w.get(r, c) = cell::dead; break;
+                case '*': w.set(r, c, cell::alive); break;
+                case '.': w.set(r, c, cell::dead); break;
                 default: throw world::error{ "each element of 'cells' must be string of '*' or '.' characters" };
             }
         }
