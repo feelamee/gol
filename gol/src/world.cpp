@@ -35,6 +35,7 @@ world::world(
 {
     check_invariants(row_count, column_count);
     data.assign(sz(row_count * column_count), c);
+    prev_data.resize(data.size());
 }
 
 world::world(
@@ -46,40 +47,72 @@ world::world(
 {
     check_invariants(row_count, column_count, i32(d.size()));
     data.assign(begin(d), end(d));
+    prev_data.resize(data.size());
 }
 
 cell & world::get(coord c)
 {
-    return data[to_index(c)];
+    return get(data, c);
 }
 
 cell const& world::get(coord c) const
 {
-    return data[to_index(c)];
+    return get(data, c);
 }
 
 cell & world::get(i32 row, i32 col)
 {
-    return get({ row, col });
+    return get(data, row, col);
 }
 
 cell const& world::get(i32 row, i32 col) const
 {
-    return get({ row, col });
+    return get(data, row, col);
 }
 
-std::optional<cell> world::at(coord c) const
+
+cell & world::get(storage_type & s, coord c) const
 {
-    return at(c.row, c.col);
+    return s[to_index(c)];
 }
 
-std::optional<cell> world::at(i32 row, i32 col) const
+cell const& world::get(storage_type const & s, coord c) const
+{
+    return s[to_index(c)];
+}
+
+cell & world::get(storage_type & s, i32 row, i32 col) const
+{
+    return get(s, { row, col });
+}
+
+cell const& world::get(storage_type const & s, i32 row, i32 col) const
+{
+    return get(s, { row, col });
+}
+
+std::optional<cell> world::try_get(coord c) const
+{
+    return try_get(data, c);
+}
+
+std::optional<cell> world::try_get(i32 row, i32 col) const
+{
+    return try_get(data, row, col);
+}
+
+std::optional<cell> world::try_get(storage_type const & s, coord c) const
+{
+    return try_get(s, c.row, c.col);
+}
+
+std::optional<cell> world::try_get(storage_type const & s, i32 row, i32 col) const
 {
     if (row < 0 || row >= row_count)
         return std::nullopt;
     if (col < 0 || col >= column_count)
         return std::nullopt;
-    return get(row, col);
+    return get(s, row, col);
 }
 
 coord world::to_coord(sz i) const
@@ -98,19 +131,20 @@ void world::iterate(u32 steps)
 
     while (steps--)
     {
-        auto const alive_neighbors_count = [w = *this](coord c)
+        prev_data.swap(data);
+        auto const alive_neighbors_count = [this](coord c)
         {
             i32 count = 0;
 
-            count += w.at(c.up())    == cell::alive;
-            count += w.at(c.down())  == cell::alive;
-            count += w.at(c.left())  == cell::alive;
-            count += w.at(c.right()) == cell::alive;
+            count += try_get(prev_data, c.up())    == cell::alive;
+            count += try_get(prev_data, c.down())  == cell::alive;
+            count += try_get(prev_data, c.left())  == cell::alive;
+            count += try_get(prev_data, c.right()) == cell::alive;
 
-            count += w.at(c.up().left())    == cell::alive;
-            count += w.at(c.up().right())   == cell::alive;
-            count += w.at(c.down().left())  == cell::alive;
-            count += w.at(c.down().right()) == cell::alive;
+            count += try_get(prev_data, c.up().left())    == cell::alive;
+            count += try_get(prev_data, c.up().right())   == cell::alive;
+            count += try_get(prev_data, c.down().left())  == cell::alive;
+            count += try_get(prev_data, c.down().right()) == cell::alive;
 
             return count;
         };
@@ -118,6 +152,8 @@ void world::iterate(u32 steps)
         for (auto [i, cell] : vs::enumerate(data))
         {
             i32 const count = alive_neighbors_count(to_coord(i));
+
+            cell = get(prev_data, to_coord(i));
 
             if (cell == cell::alive)
             {
@@ -149,6 +185,14 @@ void world::resize(i32 row_count, i32 column_count)
     this->row_count = row_count;
     this->column_count = column_count;
     data.resize(sz(row_count * column_count));
+}
+
+bool world::operator==(world const& o) const
+{
+    return row_count == o.row_count
+        && column_count == o.column_count
+        && data == o.data
+        ;
 }
 
 void world::check_invariants(i32 row_count, i32 column_count, std::optional<i32> data_size)
@@ -223,21 +267,49 @@ TEST_CASE("world::getters")
     REQUIRE(w.get(2, 1) == D);
     REQUIRE(w.get(2, 2) == A);
 
-    REQUIRE(w.at(0, 0) == A);
-    REQUIRE(w.at(0, 1) == A);
-    REQUIRE(w.at(0, 2) == D);
+    REQUIRE(w.try_get(0, 0) == A);
+    REQUIRE(w.try_get(0, 1) == A);
+    REQUIRE(w.try_get(0, 2) == D);
 
-    REQUIRE(w.at(1, 0) == D);
-    REQUIRE(w.at(1, 1) == D);
-    REQUIRE(w.at(1, 2) == A);
+    REQUIRE(w.try_get(1, 0) == D);
+    REQUIRE(w.try_get(1, 1) == D);
+    REQUIRE(w.try_get(1, 2) == A);
 
-    REQUIRE(w.at(2, 0) == A);
-    REQUIRE(w.at(2, 1) == D);
-    REQUIRE(w.at(2, 2) == A);
+    REQUIRE(w.try_get(2, 0) == A);
+    REQUIRE(w.try_get(2, 1) == D);
+    REQUIRE(w.try_get(2, 2) == A);
 
-    REQUIRE(w.at(12, 0)  == std::nullopt);
-    REQUIRE(w.at(2, -1)  == std::nullopt);
-    REQUIRE(w.at(-4, 42) == std::nullopt);
+    REQUIRE(w.try_get(12, 0)  == std::nullopt);
+    REQUIRE(w.try_get(2, -1)  == std::nullopt);
+    REQUIRE(w.try_get(-4, 42) == std::nullopt);
+
+    REQUIRE(w.get(w.data, 0, 0) == A);
+    REQUIRE(w.get(w.data, 0, 1) == A);
+    REQUIRE(w.get(w.data, 0, 2) == D);
+
+    REQUIRE(w.get(w.data, 1, 0) == D);
+    REQUIRE(w.get(w.data, 1, 1) == D);
+    REQUIRE(w.get(w.data, 1, 2) == A);
+
+    REQUIRE(w.get(w.data, 2, 0) == A);
+    REQUIRE(w.get(w.data, 2, 1) == D);
+    REQUIRE(w.get(w.data, 2, 2) == A);
+
+    REQUIRE(w.try_get(w.data, 0, 0) == A);
+    REQUIRE(w.try_get(w.data, 0, 1) == A);
+    REQUIRE(w.try_get(w.data, 0, 2) == D);
+
+    REQUIRE(w.try_get(w.data, 1, 0) == D);
+    REQUIRE(w.try_get(w.data, 1, 1) == D);
+    REQUIRE(w.try_get(w.data, 1, 2) == A);
+
+    REQUIRE(w.try_get(w.data, 2, 0) == A);
+    REQUIRE(w.try_get(w.data, 2, 1) == D);
+    REQUIRE(w.try_get(w.data, 2, 2) == A);
+
+    REQUIRE(w.try_get(w.data, 12, 0)  == std::nullopt);
+    REQUIRE(w.try_get(w.data, 2, -1)  == std::nullopt);
+    REQUIRE(w.try_get(w.data, -4, 42) == std::nullopt);
 }
 
 #ifndef DOCTEST_CONFIG_DISABLE

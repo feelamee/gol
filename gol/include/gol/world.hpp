@@ -29,6 +29,8 @@ struct world
         using gol::error::error;
     };
 
+    using storage_type = std::vector<cell>;
+
     world() = default;
 
     world(
@@ -45,6 +47,7 @@ struct world
     {
         check_invariants(row_count, column_count, i32(size(d)));
         data.assign(begin(d), end(d));
+        prev_data.resize(data.size());
     }
 
     world(
@@ -57,8 +60,16 @@ struct world
     cell & get(i32 row, i32 col);
     cell const& get(i32 row, i32 col) const;
 
-    std::optional<cell> at(coord c) const;
-    std::optional<cell> at(i32 row, i32 col) const;
+    std::optional<cell> try_get(coord c) const;
+    std::optional<cell> try_get(i32 row, i32 col) const;
+
+    cell & get(storage_type &, coord c) const;
+    cell const& get(storage_type const &, coord c) const;
+    cell & get(storage_type &, i32 row, i32 col) const;
+    cell const& get(storage_type const &, i32 row, i32 col) const;
+
+    std::optional<cell> try_get(storage_type const &, coord c) const;
+    std::optional<cell> try_get(storage_type const &, i32 row, i32 col) const;
 
     coord to_coord(sz i) const;
     sz to_index(coord c) const;
@@ -70,10 +81,11 @@ struct world
 
     void resize(i32 row_count, i32 column_count);
 
-    bool operator==(world const&) const = default;
+    bool operator==(world const&) const;
 
     // TODO! optimize by space, pack 8 cell's into one byte
-    std::vector<cell> data;
+    storage_type prev_data; //< previous world state. TODO! maybe allocate them as once memory chunk?
+    storage_type data; //< actual/current world state
     i32 row_count{ 0 };
     i32 column_count{ 0 };
 
