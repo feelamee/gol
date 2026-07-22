@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: configure cmake
-      run: cmake --preset release ${{ matrix.cmake_flags }} -DGOL_TESTS=ON
+      run: cmake --preset release ${{ matrix.cmake_flags }} -DGOL_TESTS=ON -G Ninja
 
     - name: build
       run: cmake --build --preset release

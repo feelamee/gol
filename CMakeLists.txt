@@ -2,19 +2,18 @@ cmake_minimum_required(VERSION 3.10)
 project(gol)
 
 set(options)
-macro(opt name doc val)
+macro(opt name type doc val)
     list(APPEND options ${name})
-    option(${name} "${doc}" ${val})
+    set(${name} ${val} CACHE ${type} ${doc})
 endmacro()
 
-opt(GOL_DEV "build for development" OFF)
-opt(GOL_SANITIZERS "enable sanitizers" ${GOL_DEV})
-opt(GOL_ASSERTIONS "enable assertions" ${GOL_DEV})
-opt(GOL_TESTS "build tests" ${GOL_DEV})
-opt(GOL_CCACHE "use ccache" ${GOL_DEV})
-opt(GOL_HARDENING "enable hardening" OFF)
-# by default will download and build dependencies from source
-opt(GOL_USE_SYSTEM_LIBRARIES "satisfy dependencies from system installed libraries" OFF)
+opt(GOL_DEV BOOL "build for development" OFF)
+opt(GOL_SANITIZERS BOOL "enable sanitizers" ${GOL_DEV})
+opt(GOL_ASSERTIONS BOOL "enable assertions" ${GOL_DEV})
+opt(GOL_TESTS BOOL "build tests" ${GOL_DEV})
+opt(GOL_CCACHE BOOL "use ccache" ${GOL_DEV})
+opt(GOL_HARDENING BOOL "enable hardening" OFF)
+opt(GOL_USE_LIBRARIES STRING "way to get some dependencies" "VENDORED") # accepts "VENDORED", "SYSTEM", "DOWNLOAD"
 
 
 if (GOL_CCACHE)
@@ -37,6 +36,21 @@ foreach(opt IN LISTS options)
         message(STATUS "    ${opt}: ${${opt}}")
     endif()
 endforeach()
+
+message(STATUS)
+
+message(STATUS "    CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+
+if (DEFINED CMAKE_TOOLCHAIN_FILE)
+    message(STATUS "    CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
+message(STATUS "    CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+message(STATUS "    CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message(STATUS "    CMAKE_C_COMPILER: ${CMAKE_C_COMPILER}")
+message(STATUS "    CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}")
+message(STATUS "    CMAKE_GENERATOR: ${CMAKE_GENERATOR}")
+
 message(STATUS)
 
 
@@ -45,6 +59,5 @@ include(common)
 include(dependencies)
 
 
-add_subdirectory(vendor)
 add_subdirectory(engine)
 add_subdirectory(gol)

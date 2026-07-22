@@ -53,7 +53,7 @@
         {
             "name": "release",
             "displayName": "preset for release build",
-            "inherits": [ "release-config", "ninja" ],
+            "inherits": [ "release-config" ],
             "binaryDir": "build/release/"
         }
     ],
